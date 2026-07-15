@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Letters of Marque</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏴‍☠️</text></svg>" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="labels"></div>
+      <div id="arrows"></div>
+      <div id="floaters"></div>
+
+      <div id="hud" class="hidden">
+        <div id="player-plate" class="panel">
+          <div class="plate-title"><span id="pp-name">—</span> <span id="pp-class" class="dim">—</span></div>
+          <div class="bar hp"><div id="pp-hp" class="fill"></div></div>
+          <div class="plate-row">
+            <span title="Crew">⚓ <b id="pp-crew">0</b></span>
+            <span class="gold" title="Gold">⛁ <b id="pp-gold">0</b></span>
+            <span title="Sails">⛵ <b id="pp-sails">▮▮</b></span>
+          </div>
+        </div>
+
+        <div id="fleet-panel" class="panel">
+          <div class="panel-head">FLEET</div>
+          <div id="fleet-list"></div>
+        </div>
+
+        <button id="board-btn" class="hidden">⚔ BOARD</button>
+
+        <div id="controls-bar">
+          <button id="fire-port" class="fire-btn">◀ PORT</button>
+          <div id="sail-ctrl" class="panel">
+            <button id="sail-down">−</button>
+            <div id="sail-pips"><i></i><i></i><i></i></div>
+            <button id="sail-up">+</button>
+          </div>
+          <button id="fire-starboard" class="fire-btn">STARBOARD ▶</button>
+        </div>
+
+        <button id="mute-btn" title="Toggle sound">🔊</button>
+      </div>
+
+      <div id="overlay">
+        <div id="overlay-card" class="panel"></div>
+      </div>
+      <div id="banner" class="hidden"></div>
+      <div id="steer-ring" class="hidden"></div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

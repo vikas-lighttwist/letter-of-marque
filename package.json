@@ -1,0 +1,18 @@
+{
+  "name": "letters-of-marque",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A cel-shaded 3D naval action game — an English privateer hunting Spanish treasure ships in the Caribbean.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "vite": "^8.1.4"
+  }
+}
