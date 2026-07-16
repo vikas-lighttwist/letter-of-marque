@@ -9,6 +9,8 @@ function nearestEnemy(ship, game) {
   let bestD = Infinity;
   for (const s of game.ships) {
     if (s.dead || s.sinking || s.faction === ship.faction) continue;
+    // the port is a safe harbor — the Spanish won't chase you into it
+    if (ship.faction === 'spain' && game.isSafeHarbor(s.pos)) continue;
     const d = ship.pos.distanceTo(s.pos);
     if (d < bestD) {
       bestD = d;
@@ -108,6 +110,11 @@ export function updateFleetAI(ship, game, dt, index) {
   const flag = game.flagship;
   if (!flag || flag === ship) return;
 
+  if (ship.orders === 'hunt') {
+    huntAI(ship, game);
+    return;
+  }
+
   const fwd = flag.forward;
   const right = new THREE.Vector3(-Math.cos(flag.heading), 0, Math.sin(flag.heading));
   const lateral = index % 2 === 1 ? 15 : -15;
@@ -124,4 +131,43 @@ export function updateFleetAI(ship, game, dt, index) {
 
   const { target, dist } = nearestEnemy(ship, game);
   if (target && dist < 85) tryBroadsides(ship, target, game);
+}
+
+// A ship set loose to hunt: chases the nearest Spanish sail, fights her
+// down, and boards her when she's weak enough to take.
+function huntAI(ship, game) {
+  const { target, dist } = nearestEnemy(ship, game);
+  if (!target || dist > 420) {
+    patrol(ship, game);
+    return;
+  }
+
+  const weakEnough = target.hp / target.maxHp < 0.5;
+  if (weakEnough && !target.boarding && ship.crew > 4) {
+    // run her down and grapple
+    steerTo(ship, target.pos.x, target.pos.z);
+    ship.sailSetting = 3;
+    const grappleD = (ship.def.len + target.def.len) * 0.5 + 6;
+    if (dist < grappleD) game.startBoarding(ship, target);
+    return;
+  }
+
+  // gun duel: hold her abeam at fighting range
+  ship.sailSetting = dist > 95 ? 3 : 2;
+  const bearing = Math.atan2(target.pos.x - ship.pos.x, target.pos.z - ship.pos.z);
+  if (dist > 80) {
+    steerTo(ship, target.pos.x, target.pos.z);
+  } else {
+    const a1 = bearing + Math.PI / 2;
+    const a2 = bearing - Math.PI / 2;
+    const diff = (a) => {
+      let d = a - ship.heading;
+      while (d > Math.PI) d -= Math.PI * 2;
+      while (d < -Math.PI) d += Math.PI * 2;
+      return Math.abs(d);
+    };
+    const a = diff(a1) < diff(a2) ? a1 : a2;
+    steerTo(ship, ship.pos.x + Math.sin(a) * 60, ship.pos.z + Math.cos(a) * 60);
+  }
+  tryBroadsides(ship, target, game);
 }

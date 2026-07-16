@@ -9,7 +9,7 @@ export class CameraRig {
   }
 
   zoom(delta) {
-    this.dist = THREE.MathUtils.clamp(this.dist + delta, 16, 72);
+    this.dist = THREE.MathUtils.clamp(this.dist + delta, 9, 72);
   }
 
   update(ship, dt) {

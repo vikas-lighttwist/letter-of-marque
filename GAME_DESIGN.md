@@ -241,8 +241,42 @@ src/
 | World population | 5 + fleet size Spanish ships |
 | Victory | 10,000 gold + own a Ship of the Line |
 
-## 17. Out of Scope for v1 (roadmap)
+## 17. Out of Scope (roadmap)
 
-Wind direction & points of sail · ports, repairs and crew hiring economy · storms &
-day/night · minimap · named bounty captains · sound ambience/music · gamepad ·
-multiplayer · saving between sessions.
+Storms & day/night · named bounty captains · captain character selection · sound
+ambience/music · gamepad · multiplayer · saving between sessions · chain/grape shot
+ammunition types.
+
+## 18. Version 1.1 — "The Family Update"
+
+Added from the first family playtest:
+
+- **Faster sailing** — every class ~35% faster, sharper turning.
+- **Wind** — a global wind slowly veers around the compass (clouds drift with it).
+  Sailing with the wind is up to +35% speed, against it −35%. A **wind dial** at the
+  top of the HUD points where the wind blows relative to your heading and glows
+  green (fair) or red (foul).
+- **Command any ship** — tap any ship in the fleet panel to make her your flagship
+  (or cycle with `C`). The camera, HUD and helm follow.
+- **Fleet orders** — every other ship is either **⚑ Follow** (formation, assists your
+  fights, adds crew weight to your boarding melees within 45 m) or **⚔ Hunt**
+  (roams free: chases, guns down and *autonomously boards* Spanish ships; her
+  prizes join the fleet with her orders). **📣 All follow me** recalls everyone.
+- **Anchoring & shore leave** — slow down near any island and **⚓ Drop Anchor**: a
+  shore party rows in and wanders the beach, the ship repairs at 3.5 HP/s and
+  recruits trickle back aboard.
+- **Port town** — one island holds a walled-off town (houses, watchtower, dock),
+  marked with a gold ⚓ on the minimap. The Spanish never attack inside the
+  harbor. The **Port Royal Market** sells (one-time unless noted):
+  | Item | Cost | Effect |
+  |---|---|---|
+  | Carronades | 800 | +40% broadside damage (fleet-wide) |
+  | Long Nines | 600 | +25% shot speed/range |
+  | Double-Shot Racks | 1200 | two balls per gun |
+  | Live Oak Hulls | 700 | +30% max HP, fleet-wide incl. future prizes |
+  | Hire Hands | 150 (repeatable) | +10 flagship crew |
+  | Careen & Repair | 100 (repeatable) | full fleet repair |
+- **Minimap** — round chart, bottom-right: islands, the port, flotsam, every ship
+  (white = yours, red = Spanish warship, gold = galleon), flagship as a heading
+  triangle.
+- **Deck-level zoom** — camera now zooms in close enough to watch your crew.

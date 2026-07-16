@@ -43,7 +43,9 @@ export class Ship {
     this.sinking = false;
     this.sinkT = 0;
     this.dead = false; // fully removed
-    this.boarding = null; // set by game while grappled
+    this.boarding = null; // set by game while grappled: {side, partner}
+    this.anchored = false;
+    this.orders = 'follow'; // fleet ships: 'follow' | 'hunt'
     this.lastDamageT = -100;
     this.smokeTimer = 0;
 
@@ -167,8 +169,11 @@ export class Ship {
     }
 
     // --- propulsion ---
-    const boardLock = this.boarding ? 0 : 1;
-    const targetSpeed = this.def.maxSpeed * (this.sailSetting / 3) * boardLock;
+    // sailing with the wind is a third faster, against it a third slower
+    const wind = this.game.wind;
+    const windFactor = wind ? 1 + 0.35 * Math.cos(this.heading - wind.angle) : 1;
+    const lock = this.boarding || this.anchored ? 0 : 1;
+    const targetSpeed = this.def.maxSpeed * (this.sailSetting / 3) * windFactor * lock;
     const accel = targetSpeed > this.speed ? 0.35 : 0.9;
     this.speed += (targetSpeed - this.speed) * Math.min(1, dt * accel);
 

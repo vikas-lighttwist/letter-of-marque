@@ -31,6 +31,7 @@ window.__render = () => renderer.render(scene, camera);
 input.onFire = (side) => game.fire(side);
 input.onBoard = () => game.toggleBoard();
 input.onSail = (d) => game.setSail(d);
+input.onCycle = () => game.cycleFlagship();
 
 game.hud.showIntro(() => game.start());
 

@@ -20,6 +20,7 @@ export class Input {
     this.onFire = () => {};
     this.onBoard = () => {};
     this.onSail = () => {};
+    this.onCycle = () => {};
 
     canvas.addEventListener('pointerdown', (e) => {
       try {
@@ -61,6 +62,7 @@ export class Input {
       if (e.code === 'KeyF') this.onBoard();
       if (e.code === 'KeyW') this.onSail(1);
       if (e.code === 'KeyS') this.onSail(-1);
+      if (e.code === 'KeyC') this.onCycle();
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
   }

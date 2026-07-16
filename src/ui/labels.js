@@ -88,9 +88,9 @@ export class Labels {
         const maxGold = SHIP_CLASSES[ship.classKey].gold[1];
         e.gfill.style.width = `${Math.min(100, (ship.gold / maxGold) * 100)}%`;
       }
-      const capturing = game.boarding && game.boarding.defender === ship;
+      const capturing = game.boardings.find((b) => b.defender === ship);
       e.el.classList.toggle('capturing', !!capturing);
-      if (capturing) e.cfill.style.width = `${game.boarding.progress * 100}%`;
+      if (capturing) e.cfill.style.width = `${capturing.progress * 100}%`;
     }
 
     // remove stale labels

@@ -17,10 +17,13 @@ npm run dev        # → http://localhost:5173
 Works with a trackpad, mouse, or touchscreen:
 
 - **Steer** — click/touch and hold on the sea; the ship turns toward the ring.
-- **Sails** — `−` / `+` buttons (or `W`/`S`).
+- **Sails** — `−` / `+` buttons (or `W`/`S`). Watch the **wind dial**: run with the wind for a burst of speed.
 - **Broadsides** — `PORT` / `STARBOARD` buttons (or `Q`/`E`). They glow when an enemy is in the arc.
 - **Board** — the green `BOARD` button appears when a weakened enemy is alongside (or `F`).
-- **Zoom** — scroll / pinch.
+- **Fleet** — tap a ship in the fleet panel to command her (or `C`); set the others to ⚑ follow or ⚔ hunt on their own.
+- **Islands** — slow down near shore to `⚓ Drop Anchor`: the crew goes ashore while the ship repairs.
+- **Port** — the gold ⚓ island on the minimap is a safe harbor with a market: better cannon, crew, repairs.
+- **Zoom** — scroll / pinch, down to deck level.
 
 Sink a ship and half her gold spills as flotsam; board her instead and you take
 everything — the gold, part of the crew, and the ship herself.

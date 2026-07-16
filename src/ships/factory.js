@@ -6,27 +6,27 @@ export const SHIP_CLASSES = {
   sloop: {
     key: 'sloop', label: 'Sloop',
     len: 14, wid: 4.2, hullH: 2.6, masts: 1, gunsPerSide: 2, castles: 0,
-    hp: 60, maxSpeed: 9.2, turnRate: 0.6, crew: 8, gold: [20, 60],
+    hp: 60, maxSpeed: 12.5, turnRate: 0.7, crew: 8, gold: [20, 60],
   },
   brigantine: {
     key: 'brigantine', label: 'Brigantine',
     len: 18, wid: 5.2, hullH: 3.0, masts: 2, gunsPerSide: 4, castles: 1,
-    hp: 100, maxSpeed: 8.0, turnRate: 0.46, crew: 14, gold: [50, 120],
+    hp: 100, maxSpeed: 11.0, turnRate: 0.55, crew: 14, gold: [50, 120],
   },
   frigate: {
     key: 'frigate', label: 'Frigate',
     len: 24, wid: 6.4, hullH: 3.6, masts: 3, gunsPerSide: 7, castles: 1,
-    hp: 160, maxSpeed: 7.2, turnRate: 0.36, crew: 24, gold: [100, 250],
+    hp: 160, maxSpeed: 9.8, turnRate: 0.42, crew: 24, gold: [100, 250],
   },
   galleon: {
     key: 'galleon', label: 'Galleon',
     len: 28, wid: 8.2, hullH: 4.8, masts: 3, gunsPerSide: 5, castles: 2,
-    hp: 220, maxSpeed: 5.4, turnRate: 0.27, crew: 20, gold: [400, 800],
+    hp: 220, maxSpeed: 7.2, turnRate: 0.32, crew: 20, gold: [400, 800],
   },
   shipOfTheLine: {
     key: 'shipOfTheLine', label: 'Ship of the Line',
     len: 34, wid: 9.2, hullH: 5.8, masts: 3, gunsPerSide: 12, castles: 2,
-    hp: 340, maxSpeed: 6.4, turnRate: 0.23, crew: 40, gold: [200, 450],
+    hp: 340, maxSpeed: 8.6, turnRate: 0.27, crew: 40, gold: [200, 450],
   },
 };
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SHIP_CLASSES } from '../ships/factory.js';
+import { SHOP_ITEMS } from '../game.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -15,6 +16,8 @@ export class HUD {
     $('sail-up').addEventListener('click', () => game.setSail(1));
     $('sail-down').addEventListener('click', () => game.setSail(-1));
     $('board-btn').addEventListener('click', () => game.toggleBoard());
+    $('anchor-btn').addEventListener('click', () => game.toggleAnchor());
+    $('market-btn').addEventListener('click', () => game.openMarket());
     $('mute-btn').addEventListener('click', () => {
       game.sound.muted = !game.sound.muted;
       $('mute-btn').textContent = game.sound.muted ? '🔇' : '🔊';
@@ -32,8 +35,12 @@ export class HUD {
       <table>
         <tr><td>Steer</td><td>hold / drag on the sea — the ship follows the ring</td></tr>
         <tr><td>Sails</td><td>− / + buttons &nbsp;(or W / S)</td></tr>
+        <tr><td>Wind</td><td>watch the dial — run with the wind for a burst of speed</td></tr>
         <tr><td>Broadsides</td><td>PORT / STARBOARD buttons &nbsp;(or Q / E) — they glow when guns bear</td></tr>
         <tr><td>Board</td><td>green BOARD button when a weakened enemy is alongside &nbsp;(or F)</td></tr>
+        <tr><td>Fleet</td><td>tap a ship in the fleet panel to command her (or C) — set the rest to ⚑ follow or ⚔ hunt</td></tr>
+        <tr><td>Islands</td><td>slow down near shore to ⚓ anchor — repair, and send the crew ashore</td></tr>
+        <tr><td>Port</td><td>the ⚓ gold island on the map sells cannon and crew for plunder</td></tr>
         <tr><td>Zoom</td><td>scroll or pinch</td></tr>
       </table>
       <p>Sink a ship and half her gold drowns with her. <b>Board her instead</b> — take all
@@ -62,6 +69,51 @@ export class HUD {
     $('overlay').classList.remove('hidden');
     $('hud').classList.add('hidden');
     $('restart-btn').addEventListener('click', () => location.reload());
+  }
+
+  showMarket() {
+    const card = $('overlay-card');
+    const rows = SHOP_ITEMS.map((item) => {
+      return `<div class="shop-item" data-id="${item.id}">
+        <div class="shop-icon">${item.icon}</div>
+        <div class="shop-info">
+          <div class="shop-name">${item.name}</div>
+          <div class="shop-desc">${item.desc}</div>
+        </div>
+        <button class="shop-buy" data-id="${item.id}">${item.cost} ⛁</button>
+      </div>`;
+    }).join('');
+    card.innerHTML = `
+      <h1>Port Royal Market</h1>
+      <h2>Chandlers, gunsmiths and shipwrights — plunder welcome. &nbsp;⛁ <b id="shop-gold">${this.game.gold}</b></h2>
+      <div id="shop-list">${rows}</div>
+      <button class="big-btn" id="close-market">⚓ Back to Sea</button>`;
+    $('overlay').classList.remove('hidden');
+    this.refreshMarket();
+    card.querySelectorAll('.shop-buy').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (this.game.buy(btn.dataset.id)) {
+          $('shop-gold').textContent = this.game.gold;
+          this.refreshMarket();
+        }
+      });
+    });
+    $('close-market').addEventListener('click', () => {
+      $('overlay').classList.add('hidden');
+      this.game.closeMarket();
+    });
+  }
+
+  refreshMarket() {
+    const g = this.game;
+    for (const item of SHOP_ITEMS) {
+      const btn = document.querySelector(`.shop-buy[data-id="${item.id}"]`);
+      if (!btn) continue;
+      const owned = item.once && g.upgrades.owned.has(item.id);
+      btn.disabled = owned || g.gold < item.cost;
+      btn.textContent = owned ? '✓ Fitted' : `${item.cost} ⛁`;
+      btn.classList.toggle('owned', owned);
+    }
   }
 
   banner(html, ms = 3500) {
@@ -113,10 +165,19 @@ export class HUD {
     $('pp-hp').style.width = `${(f.hp / f.maxHp) * 100}%`;
     $('pp-crew').textContent = f.crew;
     $('pp-gold').textContent = g.gold;
-    $('pp-sails').textContent = '▮'.repeat(f.sailSetting) || '—';
+    $('pp-sails').textContent = f.anchored ? '⚓' : '▮'.repeat(f.sailSetting) || '—';
 
     const pips = document.querySelectorAll('#sail-pips i');
     pips.forEach((pip, i) => pip.classList.toggle('on', i < f.sailSetting));
+
+    // wind dial: arrow shows where the wind blows, relative to our heading
+    const arrow = $('wind-arrow');
+    const rel = f.heading - g.wind.angle;
+    arrow.style.transform = `rotate(${rel - Math.PI / 2}rad)`; // ➤ glyph points right at 0
+
+    const along = Math.cos(rel);
+    arrow.classList.toggle('fair', along > 0.4);
+    arrow.classList.toggle('foul', along < -0.4);
 
     for (const side of ['port', 'starboard']) {
       const btn = $(side === 'port' ? 'fire-port' : 'fire-starboard');
@@ -125,12 +186,13 @@ export class HUD {
       btn.classList.toggle('ready', !reloading && this.inArc(side));
     }
 
-    // board button
+    // contextual buttons
     const bb = $('board-btn');
-    if (g.boarding) {
+    const mine = g.playerBoarding();
+    if (mine) {
       bb.classList.remove('hidden');
       bb.classList.add('boarding');
-      bb.textContent = `✂ Cut Ropes — ${Math.floor(g.boarding.progress * 100)}%`;
+      bb.textContent = `✂ Cut Ropes — ${Math.floor(mine.progress * 100)}%`;
     } else if (g.state === 'playing' && g.boardableTarget()) {
       bb.classList.remove('hidden', 'boarding');
       bb.textContent = '⚔ BOARD';
@@ -138,8 +200,22 @@ export class HUD {
       bb.classList.add('hidden');
     }
 
-    // fleet panel
-    const sig = g.fleet.map((s) => s.id).join(',');
+    const ab = $('anchor-btn');
+    if (f.anchored) {
+      ab.classList.remove('hidden');
+      ab.textContent = '⚓ Weigh Anchor';
+    } else if (g.canAnchor()) {
+      ab.classList.remove('hidden');
+      ab.textContent = '⚓ Drop Anchor';
+    } else {
+      ab.classList.add('hidden');
+    }
+
+    const mb = $('market-btn');
+    mb.classList.toggle('hidden', !(g.state === 'playing' && g.nearPort() && !mine));
+
+    // fleet panel — rebuilt when composition/flagship/orders change
+    const sig = g.fleet.map((s) => `${s.id}${s === f ? '*' : ''}${s.orders}`).join(',');
     if (sig !== this.fleetSig) {
       this.fleetSig = sig;
       const list = $('fleet-list');
@@ -148,11 +224,29 @@ export class HUD {
       for (const s of g.fleet) {
         const item = document.createElement('div');
         item.className = 'fleet-item' + (s === f ? ' flagship' : '');
-        item.innerHTML = `<span class="fname">${s.name}</span> <span class="dim">· ${SHIP_CLASSES[s.classKey].label}</span>
-          <div class="bar hp"><div class="fill"></div></div>`;
+        const orderBtn = s === f
+          ? ''
+          : `<button class="order-btn ${s.orders}" title="${s.orders === 'follow' ? 'Following you — tap to send her hunting' : 'Hunting alone — tap to call her back'}">${s.orders === 'follow' ? '⚑' : '⚔'}</button>`;
+        item.innerHTML = `<div class="fleet-main" title="${s === f ? 'Your flagship' : 'Tap to take command'}">
+            <span class="fname">${s.name}</span> <span class="dim">· ${SHIP_CLASSES[s.classKey].label}</span>
+            <div class="bar hp"><div class="fill"></div></div>
+          </div>${orderBtn}`;
         list.appendChild(item);
         this.fleetFills.push([s, item.querySelector('.fill')]);
+        item.querySelector('.fleet-main').addEventListener('click', () => g.setFlagship(s));
+        const ob = item.querySelector('.order-btn');
+        if (ob) {
+          ob.addEventListener('click', (e) => {
+            e.stopPropagation();
+            g.setOrders(s, s.orders === 'follow' ? 'hunt' : 'follow');
+          });
+        }
       }
+      const call = document.createElement('button');
+      call.id = 'call-all';
+      call.textContent = '📣 All follow me';
+      call.addEventListener('click', () => g.callAllToFollow());
+      if (g.fleet.length > 1) list.appendChild(call);
     }
     for (const [s, fill] of this.fleetFills) {
       fill.style.width = `${(s.hp / s.maxHp) * 100}%`;

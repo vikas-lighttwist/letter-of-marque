@@ -72,7 +72,66 @@ function createClouds(scene) {
   return group;
 }
 
-function createIsland(x, z, r) {
+// The port town: houses, a dock and a banner tower on top of a normal island.
+function createPortTown(r) {
+  const g = new THREE.Group();
+  const wallMats = [toonMat(0xe8dcc0), toonMat(0xd8c8a8), toonMat(0xc9b490)];
+  const roofMats = [toonMat(0xb0533a), toonMat(0x8f6b3e), toonMat(0x77604a)];
+  // town fans out on the +X side; the hill is pushed to -X to make room
+  const houses = 6;
+  for (let i = 0; i < houses; i++) {
+    const a = -0.75 + (i / (houses - 1)) * 1.5; // sector centered on +X
+    const d = r * rand(0.34, 0.62);
+    const w = rand(4, 6.5);
+    const h = rand(3, 4.5);
+    const house = new THREE.Group();
+    const walls = new THREE.Mesh(new THREE.BoxGeometry(w, h, w * 0.8), wallMats[i % 3]);
+    walls.position.y = h / 2;
+    house.add(walls);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(w * 0.72, h * 0.7, 4), roofMats[i % 3]);
+    roof.position.y = h + h * 0.32;
+    roof.rotation.y = Math.PI / 4;
+    house.add(roof);
+    house.position.set(Math.cos(a) * d, 2.2, Math.sin(a) * d);
+    house.rotation.y = rand(0, Math.PI * 2);
+    g.add(house);
+  }
+
+  // watchtower with a gold banner, visible from far out at sea
+  const tower = new THREE.Group();
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.2, 16, 8), toonMat(0xcabfa6));
+  shaft.position.y = 8;
+  tower.add(shaft);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(2.6, 3, 8), toonMat(0xb0533a));
+  cap.position.y = 17.4;
+  tower.add(cap);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 5, 5), toonMat(0x6b4a2a));
+  pole.position.y = 21;
+  tower.add(pole);
+  const bannerGeo = new THREE.PlaneGeometry(4.4, 2.2);
+  bannerGeo.translate(2.2, 0, 0);
+  const banner = new THREE.Mesh(
+    bannerGeo,
+    new THREE.MeshBasicMaterial({ color: 0xf2c14e, side: THREE.DoubleSide })
+  );
+  banner.position.y = 22.4;
+  tower.add(banner);
+  tower.position.set(r * 0.12, 2, 0);
+  g.add(tower);
+  g.userData.banner = banner;
+
+  // dock reaching out past the sand into open water, on the town side
+  const dockDir = rand(-0.4, 0.4);
+  const dockLen = r * 1.1;
+  const dock = new THREE.Mesh(new THREE.BoxGeometry(4.5, 1.1, dockLen), toonMat(0x8a6437));
+  dock.position.set(Math.cos(dockDir) * (r * 0.75 + dockLen / 2), 1.6, Math.sin(dockDir) * (r * 0.75 + dockLen / 2));
+  dock.rotation.y = -dockDir + Math.PI / 2;
+  g.add(dock);
+
+  return g;
+}
+
+function createIsland(x, z, r, isPort = false) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
 
@@ -80,15 +139,17 @@ function createIsland(x, z, r) {
   sand.position.y = 0.4;
   g.add(sand);
 
+  // port islands keep their hill off to one side so the town has flat ground
+  const hillR = isPort ? r * 0.42 : r * 0.72;
   const hill = new THREE.Mesh(
-    new THREE.SphereGeometry(r * 0.72, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.SphereGeometry(hillR, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
     toonMat(0x4d9e4f)
   );
   hill.scale.y = 0.55;
-  hill.position.y = 1.8;
+  hill.position.set(isPort ? -r * 0.45 : 0, 1.8, 0);
   g.add(hill);
 
-  if (r > 40) {
+  if (r > 40 && !isPort) {
     const peak = new THREE.Mesh(new THREE.ConeGeometry(r * 0.32, r * 0.5, 9), toonMat(0x7a8577));
     peak.position.y = r * 0.36;
     g.add(peak);
@@ -127,31 +188,48 @@ export function createEnvironment(scene) {
   const sky = createSky(scene);
   const clouds = createClouds(scene);
 
-  // islands: scattered, none too close to the player spawn at the origin
+  // islands: scattered, none too close to the player spawn at the origin.
+  // The first is the port town, placed within easy reach.
   const islands = [];
   const group = new THREE.Group();
+  let port = null;
   let guard = 0;
   while (islands.length < 8 && guard++ < 200) {
     const a = rand(0, Math.PI * 2);
-    const d = rand(180, 780);
+    const isPort = islands.length === 0;
+    const d = isPort ? rand(240, 400) : rand(180, 780);
     const x = Math.cos(a) * d;
     const z = Math.sin(a) * d;
-    const r = rand(26, 62);
+    const r = isPort ? rand(44, 56) : rand(26, 62);
     if (islands.some((i) => Math.hypot(i.x - x, i.z - z) < i.r + r + 90)) continue;
-    islands.push({ x, z, r: r * 1.12 });
-    group.add(createIsland(x, z, r));
+    islands.push({ x, z, r: r * 1.12, port: isPort });
+    const mesh = createIsland(x, z, r, isPort);
+    if (isPort) {
+      const town = createPortTown(r);
+      mesh.add(town);
+      port = { x, z, r: r * 1.12, banner: town.userData.banner };
+    }
+    group.add(mesh);
   }
   scene.add(group);
 
   return {
     islands,
+    port,
     sunDir: SUN_DIR,
-    update(dt, camera) {
+    update(dt, camera, windAngle = 0) {
       sky.position.set(camera.position.x, 0, camera.position.z);
+      const wx = Math.sin(windAngle);
+      const wz = Math.cos(windAngle);
       for (const cloud of clouds.children) {
-        cloud.position.x += cloud.userData.speed * dt;
-        if (cloud.position.x > 1000) cloud.position.x = -1000;
+        cloud.position.x += wx * cloud.userData.speed * dt;
+        cloud.position.z += wz * cloud.userData.speed * dt;
+        if (Math.hypot(cloud.position.x, cloud.position.z) > 1080) {
+          cloud.position.x -= wx * 2000;
+          cloud.position.z -= wz * 2000;
+        }
       }
+      if (port) port.banner.rotation.y = windAngle + Math.PI / 2 + Math.sin(performance.now() / 400) * 0.15;
     },
   };
 }

@@ -29,7 +29,7 @@ html, body {
 }
 
 #app { position: fixed; inset: 0; }
-#app canvas { position: absolute; inset: 0; display: block; touch-action: none; }
+#app > canvas { position: absolute; inset: 0; display: block; touch-action: none; }
 
 .hidden { display: none !important; }
 .dim { opacity: 0.7; }
@@ -173,6 +173,115 @@ button:active { transform: scale(0.96); }
   font-size: 20px;
   border-radius: 50%;
 }
+
+/* ---------- contextual buttons (anchor / market) ---------- */
+.ctx-btn {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  min-height: 52px;
+  font-size: 17px;
+  color: var(--parchment);
+  border-color: var(--brass);
+  box-shadow: 0 0 12px rgba(217, 169, 74, 0.4);
+}
+.ctx-btn:active { transform: translateX(-50%) scale(0.96); }
+#anchor-btn { bottom: 164px; }
+#market-btn {
+  bottom: 226px;
+  color: #241a08;
+  background: linear-gradient(#ffe08a, var(--gold));
+}
+
+/* ---------- wind dial ---------- */
+#wind-dial {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-edge);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+#wind-arrow {
+  font-size: 26px;
+  line-height: 1;
+  color: var(--parchment);
+  transition: color 0.3s;
+}
+#wind-arrow.fair { color: #8ee89b; }
+#wind-arrow.foul { color: #f0705f; }
+#wind-label {
+  position: absolute;
+  bottom: 4px;
+  font-size: 8px;
+  letter-spacing: 2px;
+  font-variant: small-caps;
+  color: var(--brass);
+}
+
+/* ---------- minimap ---------- */
+#minimap {
+  position: absolute;
+  bottom: 84px;
+  right: 14px;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+}
+
+/* ---------- fleet orders ---------- */
+#fleet-panel { pointer-events: auto; }
+.fleet-item { display: flex; align-items: center; gap: 6px; }
+.fleet-main { flex: 1; cursor: pointer; min-width: 0; }
+.fleet-main:hover .fname { color: var(--gold); }
+.fleet-item.flagship .fleet-main { cursor: default; }
+.order-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  border-radius: 6px;
+  flex: none;
+}
+.order-btn.hunt { color: var(--hp); border-color: var(--hp); }
+#call-all {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px;
+  font-size: 12px;
+}
+
+/* ---------- market ---------- */
+#shop-list { text-align: left; margin-bottom: 14px; }
+.shop-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px;
+  border-bottom: 1px solid rgba(217, 169, 74, 0.18);
+}
+.shop-icon { font-size: 26px; flex: none; width: 36px; text-align: center; }
+.shop-info { flex: 1; min-width: 0; }
+.shop-name { font-variant: small-caps; letter-spacing: 1px; color: var(--gold); font-size: 15px; }
+.shop-desc { font-size: 12px; opacity: 0.8; line-height: 1.35; }
+.shop-buy {
+  flex: none;
+  min-width: 88px;
+  min-height: 42px;
+  font-size: 14px;
+  color: #241a08;
+  background: linear-gradient(#ffe08a, var(--gold));
+  border-color: #8a6a1c;
+}
+.shop-buy:disabled { opacity: 0.45; cursor: default; }
+.shop-buy.owned { background: linear-gradient(#8ee89b, var(--capture)); }
 
 /* ---------- ship labels ---------- */
 #labels, #arrows, #floaters { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }

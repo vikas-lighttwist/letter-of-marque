@@ -21,17 +21,25 @@ export class Effects {
     const q = ship.mesh.group.quaternion;
     const sideLocal = side === 'port' ? 1 : -1;
     const shipVel = ship.velocity;
+
+    // port-town upgrades apply to the whole English fleet
+    const up = ship.faction === 'england' ? this.game.upgrades : null;
+    const ballSpeed = 38 * (up?.range ?? 1);
+    const dmgMult = up?.dmg ?? 1;
+    const perGun = up?.double ? 2 : 1;
+
     for (const local of ship.mesh.cannonsLocal[side]) {
       const pos = ship.localToWorld(local.x, local.y, local.z);
       const dir = new THREE.Vector3(sideLocal, 0, 0).applyQuaternion(q);
-      // spread + slight upward arc
-      const spread = (Math.random() - 0.5) * 0.09;
-      const yaw = Math.atan2(dir.x, dir.z) + spread;
-      const vel = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw))
-        .multiplyScalar(38)
-        .add(new THREE.Vector3(0, 6.2 + Math.random() * 1.2, 0))
-        .addScaledVector(shipVel, 0.5);
-      this.spawnBall(pos, vel, ship);
+      for (let shot = 0; shot < perGun; shot++) {
+        const spread = (Math.random() - 0.5) * (0.09 + shot * 0.04);
+        const yaw = Math.atan2(dir.x, dir.z) + spread;
+        const vel = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw))
+          .multiplyScalar(ballSpeed)
+          .add(new THREE.Vector3(0, 6.2 + Math.random() * 1.2, 0))
+          .addScaledVector(shipVel, 0.5);
+        this.spawnBall(pos, vel, ship, dmgMult);
+      }
       this.spawnPuff(pos, 0xffb347, 0.7, 0.16, dir.clone().multiplyScalar(6));
       this.spawnPuff(pos.clone().addScaledVector(dir, 0.8), 0xdedede, 1.1, 0.9, dir.clone().multiplyScalar(3));
     }
@@ -39,11 +47,11 @@ export class Effects {
     return true;
   }
 
-  spawnBall(pos, vel, shooter) {
+  spawnBall(pos, vel, shooter, dmgMult = 1) {
     const mesh = new THREE.Mesh(BALL_GEO, BALL_MAT);
     mesh.position.copy(pos);
     this.scene.add(mesh);
-    this.balls.push({ mesh, vel, shooter, life: 5 });
+    this.balls.push({ mesh, vel, shooter, dmgMult, life: 5 });
   }
 
   spawnPuff(pos, color, scale, life, drift = null) {
@@ -119,7 +127,7 @@ export class Effects {
         for (const s of this.game.ships) {
           if (s === b.shooter || s.dead || s.faction === b.shooter.faction) continue;
           if (s.containsPoint(p)) {
-            if (!s.sinking) s.applyDamage(5.5 + Math.random() * 3.5, b.shooter);
+            if (!s.sinking) s.applyDamage((5.5 + Math.random() * 3.5) * b.dmgMult, b.shooter);
             this.spawnBurst(p);
             this.game.sound.thud(p);
             remove = true;
