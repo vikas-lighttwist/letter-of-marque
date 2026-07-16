@@ -6,6 +6,17 @@ import { waveHeight } from '../world/waves.js';
 const BOAT_SPEED = 8;
 const WALK_SPEED = 6;
 
+const PARROT_PHRASES = [
+  'Pieces of eight!',
+  'Walk the plank!',
+  'Shiver me timbers!',
+  'Land ho!',
+  'Yo ho ho!',
+  'Pretty bird! Pretty bird!',
+  'X marks the spot!',
+  'Batten the hatches!',
+];
+
 function angleDiff(a, b) {
   let d = a - b;
   while (d > Math.PI) d -= Math.PI * 2;
@@ -157,12 +168,18 @@ export class AshoreMode {
       );
       this.raycaster.setFromCamera(ndc, this.game.camera);
       if (this.raycaster.intersectObject(this.parrot, true).length > 0) {
-        this.squawkCooldown = 1.2;
-        this.game.sound.squawk();
+        this.squawkCooldown = 2;
+        // random phrase, never the same one twice in a row
+        let phrase;
+        do {
+          phrase = PARROT_PHRASES[Math.floor(Math.random() * PARROT_PHRASES.length)];
+        } while (phrase === this.lastPhrase && PARROT_PHRASES.length > 1);
+        this.lastPhrase = phrase;
+        this.game.sound.parrotSay(phrase);
         const p = new THREE.Vector3();
         this.parrot.getWorldPosition(p);
         p.y += 0.6;
-        this.game.hud.floaterAt(p, '🦜 Pieces of eight!', 'speech');
+        this.game.hud.floaterAt(p, `🦜 ${phrase}`, 'speech');
       }
     });
   }

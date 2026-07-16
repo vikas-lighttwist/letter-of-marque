@@ -143,4 +143,34 @@ export class Sound {
       osc.stop(t0 + start + dur + 0.02);
     }
   }
+
+  // the parrot "voice": browser speech synthesis pitched to the rafters,
+  // led in by a screech. Falls back to just the squawk if TTS is missing.
+  parrotVoice() {
+    if (this._parrotVoice) return this._parrotVoice;
+    const voices = window.speechSynthesis?.getVoices() ?? [];
+    if (voices.length === 0) return null; // Chrome loads voices async — retry next squawk
+    const en = voices.filter((v) => v.lang?.startsWith('en'));
+    this._parrotVoice =
+      en.find((v) => /samantha|karen|tessa|moira|zira|female/i.test(v.name)) ||
+      en[0] || voices[0] || null;
+    return this._parrotVoice;
+  }
+
+  parrotSay(text) {
+    this.squawk();
+    if (this.muted || !('speechSynthesis' in window)) return;
+    try {
+      speechSynthesis.cancel(); // no parrot backlog
+      const u = new SpeechSynthesisUtterance(`Rawk! ${text}`);
+      u.pitch = 2; // as squawky as the API allows
+      u.rate = 1.2 + Math.random() * 0.2;
+      u.volume = 1;
+      const v = this.parrotVoice();
+      if (v) u.voice = v;
+      setTimeout(() => speechSynthesis.speak(u), 200); // screech leads, words follow
+    } catch {
+      // some embedded browsers stub the API — the squawk already played
+    }
+  }
 }

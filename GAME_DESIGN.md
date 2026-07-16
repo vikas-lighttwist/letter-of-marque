@@ -294,8 +294,13 @@ Added from the first family playtest:
   — hold the pointer to walk toward it (or W/A/S/D), climb the hills for the
   view. **⛵ Return to Ship** rows you back.
 - **The captain himself** — red coat, black tricorn with a gold band and
-  feather, and a **parrot on his shoulder**. Tap the parrot: it squawks and
-  cries *"Pieces of eight!"* in a parchment speech bubble.
+  feather, and a **parrot on his shoulder**. Tap the parrot: it screeches,
+  then *speaks* — browser speech synthesis pitched to maximum ("Rawk!" first,
+  ~1.2–1.4× rate) gives it a squawky cartoon-parrot voice with zero audio
+  assets. Eight rotating phrases ("Pieces of eight!", "Walk the plank!",
+  "Shiver me timbers!", "Land ho!", …), never the same twice in a row, each
+  shown in a parchment speech bubble. Falls back to screech + bubble where
+  the browser has no TTS voices.
 - **Walk into the market** — at the port town the middle house hangs a gold
   sign and stacks barrels out front; walk up to its door and **🛒 Enter the
   Market** opens the shop. Buildings have collision — no ghosting through
