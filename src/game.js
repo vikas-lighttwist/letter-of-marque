@@ -7,7 +7,7 @@ import { CameraRig } from './core/cameraRig.js';
 import { HUD } from './ui/hud.js';
 import { Labels } from './ui/labels.js';
 import { Minimap } from './ui/minimap.js';
-import { AshoreMode } from './ashore/ashore.js';
+import { AshoreMode, islandGroundY } from './ashore/ashore.js';
 import { makeCaptain } from './ships/captain.js';
 import { waveHeight } from './world/waves.js';
 import { toonMat } from './core/toon.js';
@@ -84,6 +84,7 @@ export class Game {
     this.fleet = [];
     this.loot = [];
     this.boardings = [];
+    this.treasure = null;
     this.shore = null; // {island, figures} while anchored
     this.anchorT = 0;
     this.spawnTimer = 10;
@@ -524,17 +525,157 @@ export class Game {
     else this.toggleAnchor();
   }
 
-  // the market-slot button: go ashore when anchored, enter the shop when at its door
-  marketAction() {
-    if (this.ashore.active) {
-      if (this.ashore.nearShop()) this.hud.showMarket();
-    } else {
+  nearTavern() {
+    const tv = this.env.port?.tavern;
+    if (!tv || !this.ashore.active || this.ashore.phase !== 'walk' || !this.ashore.island?.port) return false;
+    const c = this.ashore.captain.pos;
+    return Math.hypot(c.x - tv.x, c.z - tv.z) < 11;
+  }
+
+  // the point-of-interest button: go ashore when anchored; ashore it becomes
+  // dig / tavern / market depending on where the captain stands
+  poiAction() {
+    if (!this.ashore.active) {
       this.goAshore();
+    } else if (this.nearDigSpot()) {
+      this.digTreasure();
+    } else if (this.nearTavern()) {
+      this.hud.showTavern();
+    } else if (this.ashore.nearShop()) {
+      this.hud.showMarket();
     }
   }
 
   closeMarket() {
     // the market is just an overlay now — nothing to unpause
+  }
+
+  // ------------------------------------------------------------ tavern fare & wagers
+
+  tavernBuy(id) {
+    const costs = { fizz: 30, stew: 40, duff: 60, map: 150 };
+    const cost = costs[id];
+    if (cost === undefined || this.gold < cost) return false;
+    if (id === 'map' && this.treasure) return false;
+    this.gold -= cost;
+    switch (id) {
+      case 'fizz':
+        this.buffs.speedUntil = this.elapsed + 90;
+        this.hud.banner('🥥 The crew cheers — full speed ahead! (90s)');
+        break;
+      case 'stew':
+        this.buffs.repairUntil = this.elapsed + 90;
+        this.hud.banner('🍲 Hearty bellies mend hulls — fast repairs! (90s)');
+        break;
+      case 'duff':
+        if (this.flagship) this.flagship.crew += 3;
+        this.hud.banner('🍮 Word spreads of a generous captain — 3 hands sign on!');
+        break;
+      case 'map':
+        this.createTreasure();
+        break;
+    }
+    this.sound.coin();
+    return true;
+  }
+
+  createTreasure() {
+    const isls = this.env.islands.filter((i) => !i.port);
+    const isl = isls[Math.floor(Math.random() * isls.length)];
+    const a = rand(0, Math.PI * 2);
+    const rr = isl.rRaw * rand(0.3, 0.65);
+    const x = isl.x + Math.sin(a) * rr;
+    const z = isl.z + Math.cos(a) * rr;
+    const marker = new THREE.Group();
+    for (const rot of [Math.PI / 4, -Math.PI / 4]) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.45), toonMat(0x4a3826));
+      plank.rotation.y = rot;
+      marker.add(plank);
+    }
+    marker.position.set(x, islandGroundY(isl, x, z) + 0.08, z);
+    this.scene.add(marker);
+    this.treasure = { island: isl, x, z, marker };
+    this.hud.banner('🗺 The map marks an island on your chart — seek the ✕!');
+  }
+
+  nearDigSpot() {
+    const tr = this.treasure;
+    if (!tr || !this.ashore.active || this.ashore.phase !== 'walk') return false;
+    if (this.ashore.island !== tr.island) return false;
+    const c = this.ashore.captain.pos;
+    return Math.hypot(c.x - tr.x, c.z - tr.z) < 5;
+  }
+
+  digTreasure() {
+    if (!this.nearDigSpot()) return;
+    const tr = this.treasure;
+    this.treasure = null;
+    this.scene.remove(tr.marker);
+    this.sound.dig();
+    setTimeout(() => this.sound.dig(), 350);
+
+    const y = islandGroundY(tr.island, tr.x, tr.z);
+    const chest = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.85), toonMat(0x7a4a26));
+    body.position.y = 0.35;
+    chest.add(body);
+    const lid = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.2, 0.85), toonMat(0x8a5a33));
+    lid.position.set(0, 0.78, -0.36);
+    lid.rotation.x = -1.0;
+    chest.add(lid);
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.72, 0.87), toonMat(0xd9a94a));
+    strap.position.y = 0.35;
+    chest.add(strap);
+    const pile = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), toonMat(0xf2c14e));
+    pile.position.y = 0.62;
+    chest.add(pile);
+    chest.position.set(tr.x, y, tr.z);
+    chest.rotation.y = rand(0, Math.PI * 2);
+    this.scene.add(chest);
+
+    const amount = 400 + Math.round(Math.random() * 500);
+    this.hud.banner('⛏ The spades bite wood — a chest!');
+    setTimeout(() => {
+      this.addGold(amount, new THREE.Vector3(tr.x, y + 2.5, tr.z));
+      this.sound.fanfare();
+    }, 600);
+  }
+
+  megShipClass() {
+    const r = Math.random();
+    return r < 0.5 ? 'sloop' : r < 0.8 ? 'brigantine' : 'frigate';
+  }
+
+  winShipFromBet(classKey) {
+    const p = this.env.port;
+    const a = rand(0, Math.PI * 2);
+    const s = this.addShip(
+      classKey, 'england',
+      p.x + Math.sin(a) * (p.r + 40), p.z + Math.cos(a) * (p.r + 40),
+      rand(0, Math.PI * 2)
+    );
+    if (this.upgrades.oak) {
+      s.maxHp = Math.round(s.maxHp * 1.3);
+      s.hp = s.maxHp;
+      s.oakFitted = true;
+    }
+    s.reloadTime = 2.2;
+    s.orders = 'follow';
+    this.fleet.push(s);
+    this.hud.banner(`⚑ You won ${s.name} — she anchors off the port!`);
+    return s;
+  }
+
+  loseShipToBet(ship) {
+    const i = this.fleet.indexOf(ship);
+    if (i < 0 || ship === this.flagship) return;
+    this.fleet.splice(i, 1);
+    ship.faction = 'spain';
+    ship.orders = 'follow';
+    ship.wp = null;
+    ship.buildMesh();
+    ship.buildCrew();
+    this.hud.banner(`${ship.name} hoists Meg's colors and slips away…`);
   }
 
   buy(id) {

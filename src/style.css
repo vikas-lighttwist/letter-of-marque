@@ -283,6 +283,41 @@ button:active { transform: scale(0.96); }
 .shop-buy:disabled { opacity: 0.45; cursor: default; }
 .shop-buy.owned { background: linear-gradient(#8ee89b, var(--capture)); }
 
+/* ---------- tavern & dice ---------- */
+.dice-head {
+  font-variant: small-caps;
+  letter-spacing: 2px;
+  color: var(--brass);
+  margin: 14px 0 6px;
+  font-size: 14px;
+}
+.dice-rules { font-size: 12.5px !important; opacity: 0.8; }
+.stake-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 10px 0 16px; }
+.stake-row button { min-width: 88px; min-height: 46px; font-size: 15px; }
+.stake-row button:disabled { opacity: 0.4; }
+.stake-col { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.ship-pick { min-height: 48px; font-size: 15px; }
+#dice-table { margin: 12px 0 4px; }
+.dice-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 4px 0; }
+.dice-row .dname {
+  width: 56px;
+  text-align: right;
+  font-variant: small-caps;
+  color: var(--brass);
+  font-size: 14px;
+  margin-right: 6px;
+}
+.die { font-size: 42px; line-height: 1; color: var(--parchment); }
+.die.locked { color: var(--gold); text-shadow: 0 0 10px rgba(242, 193, 78, 0.55); }
+.die.empty { opacity: 0.22; }
+.die.cargo { color: #8ee89b; }
+.dice-gap { width: 14px; }
+.cargo-sum { font-size: 20px; color: #8ee89b; margin-left: 8px; min-width: 28px; text-align: left; }
+.dice-status { text-align: center; font-size: 14px; margin: 8px 0 4px; min-height: 20px; }
+.dice-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+.dice-controls button { padding: 12px 20px; font-size: 15px; min-height: 48px; }
+.meg-line { font-style: italic; color: var(--gold); margin-top: 10px; font-size: 14px; }
+
 /* ---------- ship labels ---------- */
 #labels, #arrows, #floaters { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .ship-label {

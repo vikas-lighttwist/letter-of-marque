@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { SHIP_CLASSES } from '../ships/factory.js';
 import { SHOP_ITEMS } from '../game.js';
+import { Tavern } from './tavern.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,7 +17,7 @@ export class HUD {
     $('sail-down').addEventListener('click', () => game.setSail(-1));
     $('board-btn').addEventListener('click', () => game.toggleBoard());
     $('anchor-btn').addEventListener('click', () => game.anchorAction());
-    $('market-btn').addEventListener('click', () => game.marketAction());
+    $('market-btn').addEventListener('click', () => game.poiAction());
     $('mute-btn').addEventListener('click', () => {
       game.sound.setMuted(!game.sound.muted);
       $('mute-btn').textContent = game.sound.muted ? '🔇' : '🔊';
@@ -96,6 +97,11 @@ export class HUD {
       $('overlay').classList.add('hidden');
       this.game.closeMarket();
     });
+  }
+
+  showTavern() {
+    this.tavern ??= new Tavern(this.game, this);
+    this.tavern.show();
   }
 
   refreshMarket() {
@@ -202,12 +208,16 @@ export class HUD {
     const ab = $('anchor-btn');
     const mb = $('market-btn');
     if (ashore) {
-      // ashore: anchor slot = return to ship, market slot = shop door
+      // ashore: anchor slot = return to ship, market slot = nearest point of interest
       if (g.ashore.phase === 'walk') {
         ab.classList.remove('hidden');
         ab.textContent = '⛵ Return to Ship';
-        mb.classList.toggle('hidden', !g.ashore.nearShop());
-        mb.textContent = '🛒 Enter the Market';
+        let poi = null;
+        if (g.nearDigSpot()) poi = '⛏ DIG HERE!';
+        else if (g.nearTavern()) poi = '🍗 Enter the Tavern';
+        else if (g.ashore.nearShop()) poi = '🛒 Enter the Market';
+        mb.classList.toggle('hidden', !poi);
+        if (poi) mb.textContent = poi;
       } else {
         ab.classList.add('hidden');
         mb.classList.add('hidden');

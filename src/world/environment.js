@@ -143,6 +143,55 @@ function createPortTown(r) {
   obstacles.push({ x: r * 0.12, z: 0, r: 3 });
   g.userData.banner = banner;
 
+  // The Thirsty Parrot — the tavern, south of the house row
+  const tavern = new THREE.Group();
+  const twalls = new THREE.Mesh(new THREE.BoxGeometry(9.5, 4.6, 7), toonMat(0xe3d5b8));
+  twalls.position.y = 2.3;
+  tavern.add(twalls);
+  const troof = new THREE.Mesh(new THREE.ConeGeometry(7.8, 3.4, 4), toonMat(0x8f4a3a));
+  troof.position.y = 6.1;
+  troof.rotation.y = Math.PI / 4;
+  tavern.add(troof);
+  const tdoor = new THREE.Mesh(new THREE.BoxGeometry(1.9, 2.7, 0.3), toonMat(0x4a301c));
+  tdoor.position.set(0, 1.35, 3.55);
+  tavern.add(tdoor);
+  for (const side of [-1.6, 1.6]) {
+    const lantern = new THREE.Mesh(
+      new THREE.SphereGeometry(0.24, 8, 6),
+      new THREE.MeshBasicMaterial({ color: 0xffd977 })
+    );
+    lantern.position.set(side, 2.6, 3.6);
+    tavern.add(lantern);
+  }
+  // hanging sign with a little parrot perched on top
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 4.4, 6), toonMat(0x6b4a2a));
+  post.position.set(4.2, 2.2, 4.2);
+  tavern.add(post);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 2.2, 5), toonMat(0x6b4a2a));
+  arm.rotation.z = Math.PI / 2;
+  arm.position.set(3.4, 4.2, 4.2);
+  tavern.add(arm);
+  const board = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.3, 0.14), toonMat(0xd9a94a));
+  board.position.set(3.0, 3.3, 4.2);
+  tavern.add(board);
+  const signParrot = new THREE.Group();
+  const spBody = new THREE.Mesh(new THREE.SphereGeometry(0.22, 7, 6), toonMat(0x2fae4a));
+  spBody.scale.set(1, 1.3, 1);
+  signParrot.add(spBody);
+  const spHead = new THREE.Mesh(new THREE.SphereGeometry(0.15, 7, 6), toonMat(0xd9342b));
+  spHead.position.set(0, 0.32, 0.06);
+  signParrot.add(spHead);
+  signParrot.position.set(3.0, 4.35, 4.2);
+  tavern.add(signParrot);
+
+  const ta = -1.15;
+  const td = r * 0.52;
+  tavern.position.set(Math.cos(ta) * td, 2.05, Math.sin(ta) * td);
+  tavern.rotation.y = Math.atan2(-Math.cos(ta), -Math.sin(ta)) + Math.PI;
+  g.add(tavern);
+  obstacles.push({ x: tavern.position.x, z: tavern.position.z, r: 6 });
+  g.userData.tavern = { x: tavern.position.x, z: tavern.position.z };
+
   // dock reaching out past the sand into open water, on the town side
   const dockDir = rand(-0.4, 0.4);
   const dockLen = r * 1.1;
@@ -238,6 +287,7 @@ export function createEnvironment(scene) {
       port = {
         x, z, r: r * 1.12, banner: town.userData.banner,
         shop: { x: x + town.userData.shop.x, z: z + town.userData.shop.z },
+        tavern: { x: x + town.userData.tavern.x, z: z + town.userData.tavern.z },
         obstacles: town.userData.obstacles.map((o) => ({ x: x + o.x, z: z + o.z, r: o.r })),
       };
     }

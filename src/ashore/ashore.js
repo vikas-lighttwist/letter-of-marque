@@ -7,6 +7,21 @@ import { waveHeight } from '../world/waves.js';
 const BOAT_SPEED = 8;
 const WALK_SPEED = 6;
 
+// walking surface height: flat sand, hemisphere hill, sloping beach
+export function islandGroundY(isl, x, z) {
+  const d = Math.hypot(x - isl.x, z - isl.z);
+  let y;
+  const sandEdge = isl.rRaw * 0.9;
+  if (d < sandEdge) y = 2.05;
+  else y = Math.max(0.6, 2.05 - ((d - sandEdge) / (isl.rRaw * 0.25)) * 1.6);
+
+  const hd = Math.hypot(x - (isl.x + isl.hillX), z - isl.z);
+  if (hd < isl.hillR) {
+    y = Math.max(y, 1.8 + 0.55 * Math.sqrt(isl.hillR * isl.hillR - hd * hd));
+  }
+  return y;
+}
+
 function angleDiff(a, b) {
   let d = a - b;
   while (d > Math.PI) d -= Math.PI * 2;
@@ -286,19 +301,7 @@ export class AshoreMode {
     return Math.hypot(this.captain.pos.x - shop.x, this.captain.pos.z - shop.z) < 9;
   }
 
-  // walking surface height: flat sand, hemisphere hill, sloping beach
   groundY(x, z) {
-    const isl = this.island;
-    const d = Math.hypot(x - isl.x, z - isl.z);
-    let y;
-    const sandEdge = isl.rRaw * 0.9;
-    if (d < sandEdge) y = 2.05;
-    else y = Math.max(0.6, 2.05 - ((d - sandEdge) / (isl.rRaw * 0.25)) * 1.6);
-
-    const hd = Math.hypot(x - (isl.x + isl.hillX), z - isl.z);
-    if (hd < isl.hillR) {
-      y = Math.max(y, 1.8 + 0.55 * Math.sqrt(isl.hillR * isl.hillR - hd * hd));
-    }
-    return y;
+    return islandGroundY(this.island, x, z);
   }
 }

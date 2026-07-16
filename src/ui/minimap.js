@@ -52,6 +52,19 @@ export class Minimap {
       ctx.fillRect(x - 1, y - 1, 2, 2);
     }
 
+    // X marks the spot
+    if (game.treasure) {
+      const [x, y] = this.toMap(game.treasure.x, game.treasure.z);
+      ctx.strokeStyle = '#e0503c';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 4, y - 4);
+      ctx.lineTo(x + 4, y + 4);
+      ctx.moveTo(x + 4, y - 4);
+      ctx.lineTo(x - 4, y + 4);
+      ctx.stroke();
+    }
+
     // ships
     for (const s of game.ships) {
       if (s.dead || s.sinking) continue;
