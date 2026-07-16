@@ -176,8 +176,16 @@ export class Game {
     const host = f.mesh.group;
     if (cap.parent !== host) {
       host.add(cap);
-      cap.position.set(0, f.mesh.deckY + 0.1, -f.def.len * 0.2);
+      // he commands from atop the sterncastle where you can see him;
+      // on castle-less sloops he stands the open stern deck
+      const def = f.def;
+      if (def.castles >= 1) {
+        cap.position.set(0, f.mesh.deckY + def.hullH * 0.52 + 0.02, -def.len * 0.335);
+      } else {
+        cap.position.set(0, f.mesh.deckY + 0.1, -def.len * 0.3);
+      }
       cap.rotation.set(0, 0, 0);
+      cap.scale.setScalar(1.35);
     }
     cap.rotation.z = Math.sin(t * 1.7) * 0.03; // sea legs
     this.deckCap.parrot.rotation.z = Math.sin(t * 3.1) * 0.08;
