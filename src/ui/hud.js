@@ -32,10 +32,10 @@ export class HUD {
       <div class="tc-masthead">Letter of Marque</div>
       <div class="tc-title">Port Royal — 1668</div>
       <div class="tc-body">
-        The wealth of an empire sails from the Spanish Main, guarded by Galleons that give no quarter.<br>
-        The English governors of recently captured Port Royal grant Letters of Marque to any buccaneer bold enough to take on the Spanish Empire.
+        The Wealth of an Empire sails from the Spanish Main, guarded by Galleons that give no quarter.<br>
+        The English Governors of recently captured Port Royal grant Letters of Marque to any buccaneer bold enough to take on the Spanish Empire.
       </div>
-      <div class="tc-letter">You hold such a letter.</div>
+      <div class="tc-letter">You hold such a Letter.</div>
       <div class="tc-age">It is the Golden Age of Piracy</div>
       <button id="start-btn" class="tc-btn">Set Sail</button>
       <div class="tc-hints">hold the sea to steer &nbsp;·&nbsp; fire lets fly both broadsides &nbsp;·&nbsp;
