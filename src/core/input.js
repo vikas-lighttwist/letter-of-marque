@@ -57,8 +57,7 @@ export class Input {
     window.addEventListener('keydown', (e) => {
       if (e.repeat) return;
       this.keys.add(e.code);
-      if (e.code === 'KeyQ') this.onFire('port');
-      if (e.code === 'KeyE') this.onFire('starboard');
+      if (e.code === 'KeyQ' || e.code === 'KeyE' || e.code === 'Space') this.onFire();
       if (e.code === 'KeyF') this.onBoard();
       if (e.code === 'KeyW') this.onSail(1);
       if (e.code === 'KeyS') this.onSail(-1);

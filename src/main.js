@@ -28,7 +28,7 @@ const game = new Game({ scene, camera, env, ocean, input, sound });
 window.game = game; // debug/console access
 window.__render = () => renderer.render(scene, camera);
 
-input.onFire = (side) => game.fire(side);
+input.onFire = () => game.fire();
 input.onBoard = () => game.toggleBoard();
 input.onSail = (d) => game.setSail(d);
 input.onCycle = () => game.cycleFlagship();

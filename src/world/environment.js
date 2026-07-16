@@ -79,6 +79,8 @@ function createPortTown(r) {
   const roofMats = [toonMat(0xb0533a), toonMat(0x8f6b3e), toonMat(0x77604a)];
   // town fans out on the +X side; the hill is pushed to -X to make room
   const houses = 6;
+  let shopLocal = null;
+  const obstacles = [];
   for (let i = 0; i < houses; i++) {
     const a = -0.75 + (i / (houses - 1)) * 1.5; // sector centered on +X
     const d = r * rand(0.34, 0.62);
@@ -95,7 +97,27 @@ function createPortTown(r) {
     house.position.set(Math.cos(a) * d, 2.2, Math.sin(a) * d);
     house.rotation.y = rand(0, Math.PI * 2);
     g.add(house);
+    obstacles.push({ x: house.position.x, z: house.position.z, r: w * 0.8 });
+
+    // the middle house is the market: hanging sign + barrels out front
+    if (i === 2) {
+      shopLocal = { x: house.position.x, z: house.position.z };
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 1.3, 0.18),
+        new THREE.MeshBasicMaterial({ color: 0xf2c14e })
+      );
+      sign.position.set(house.position.x, 2.2 + h + 1.2, house.position.z);
+      g.add(sign);
+      const barrelGeo = new THREE.CylinderGeometry(0.55, 0.55, 1.1, 8);
+      for (const off of [[2.2, 0.8], [2.8, -0.6]]) {
+        const barrel = new THREE.Mesh(barrelGeo, toonMat(0x9a6b35));
+        barrel.position.set(house.position.x + off[0], 2.75, house.position.z + off[1]);
+        g.add(barrel);
+      }
+    }
   }
+  g.userData.shop = shopLocal;
+  g.userData.obstacles = obstacles;
 
   // watchtower with a gold banner, visible from far out at sea
   const tower = new THREE.Group();
@@ -118,6 +140,7 @@ function createPortTown(r) {
   tower.add(banner);
   tower.position.set(r * 0.12, 2, 0);
   g.add(tower);
+  obstacles.push({ x: r * 0.12, z: 0, r: 3 });
   g.userData.banner = banner;
 
   // dock reaching out past the sand into open water, on the town side
@@ -202,12 +225,21 @@ export function createEnvironment(scene) {
     const z = Math.sin(a) * d;
     const r = isPort ? rand(44, 56) : rand(26, 62);
     if (islands.some((i) => Math.hypot(i.x - x, i.z - z) < i.r + r + 90)) continue;
-    islands.push({ x, z, r: r * 1.12, port: isPort });
+    islands.push({
+      x, z, r: r * 1.12, rRaw: r, port: isPort,
+      // walking-surface hill parameters (matches createIsland's meshes)
+      hillR: isPort ? r * 0.42 : r * 0.72,
+      hillX: isPort ? -r * 0.45 : 0,
+    });
     const mesh = createIsland(x, z, r, isPort);
     if (isPort) {
       const town = createPortTown(r);
       mesh.add(town);
-      port = { x, z, r: r * 1.12, banner: town.userData.banner };
+      port = {
+        x, z, r: r * 1.12, banner: town.userData.banner,
+        shop: { x: x + town.userData.shop.x, z: z + town.userData.shop.z },
+        obstacles: town.userData.obstacles.map((o) => ({ x: x + o.x, z: z + o.z, r: o.r })),
+      };
     }
     group.add(mesh);
   }

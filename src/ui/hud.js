@@ -11,13 +11,12 @@ export class HUD {
     this.fleetSig = '';
     this.fleetFills = [];
 
-    $('fire-port').addEventListener('click', () => game.fire('port'));
-    $('fire-starboard').addEventListener('click', () => game.fire('starboard'));
+    $('fire-btn').addEventListener('click', () => game.fire());
     $('sail-up').addEventListener('click', () => game.setSail(1));
     $('sail-down').addEventListener('click', () => game.setSail(-1));
     $('board-btn').addEventListener('click', () => game.toggleBoard());
-    $('anchor-btn').addEventListener('click', () => game.toggleAnchor());
-    $('market-btn').addEventListener('click', () => game.openMarket());
+    $('anchor-btn').addEventListener('click', () => game.anchorAction());
+    $('market-btn').addEventListener('click', () => game.marketAction());
     $('mute-btn').addEventListener('click', () => {
       game.sound.muted = !game.sound.muted;
       $('mute-btn').textContent = game.sound.muted ? '🔇' : '🔊';
@@ -36,11 +35,12 @@ export class HUD {
         <tr><td>Steer</td><td>hold / drag on the sea — the ship follows the ring</td></tr>
         <tr><td>Sails</td><td>− / + buttons &nbsp;(or W / S)</td></tr>
         <tr><td>Wind</td><td>watch the dial — run with the wind for a burst of speed</td></tr>
-        <tr><td>Broadsides</td><td>PORT / STARBOARD buttons &nbsp;(or Q / E) — they glow when guns bear</td></tr>
+        <tr><td>Fire</td><td>the 🔥 FIRE button lets fly both broadsides &nbsp;(or Space) — it glows when guns bear</td></tr>
         <tr><td>Board</td><td>green BOARD button when a weakened enemy is alongside &nbsp;(or F)</td></tr>
         <tr><td>Fleet</td><td>tap a ship in the fleet panel to command her (or C) — set the rest to ⚑ follow or ⚔ hunt</td></tr>
-        <tr><td>Islands</td><td>slow down near shore to ⚓ anchor — repair, and send the crew ashore</td></tr>
-        <tr><td>Port</td><td>the ⚓ gold island on the map sells cannon and crew for plunder</td></tr>
+        <tr><td>Islands</td><td>slow down near shore, ⚓ anchor, then 🚶 go ashore and explore on foot</td></tr>
+        <tr><td>Port</td><td>row into the ⚓ gold island and walk to the market for cannon and crew</td></tr>
+        <tr><td>The edge</td><td>sail off the edge of the chart and you'll appear on the far side</td></tr>
         <tr><td>Zoom</td><td>scroll or pinch</td></tr>
       </table>
       <p>Sink a ship and half her gold drowns with her. <b>Board her instead</b> — take all
@@ -179,21 +179,26 @@ export class HUD {
     arrow.classList.toggle('fair', along > 0.4);
     arrow.classList.toggle('foul', along < -0.4);
 
-    for (const side of ['port', 'starboard']) {
-      const btn = $(side === 'port' ? 'fire-port' : 'fire-starboard');
-      const reloading = f.reload[side] > 0;
-      btn.classList.toggle('reloading', reloading);
-      btn.classList.toggle('ready', !reloading && this.inArc(side));
-    }
+    const ashore = g.ashore?.active;
+    $('controls-bar').classList.toggle('hidden', !!ashore);
+
+    const fireBtn = $('fire-btn');
+    const portReady = f.reload.port <= 0;
+    const stbdReady = f.reload.starboard <= 0;
+    fireBtn.classList.toggle('reloading', !portReady && !stbdReady);
+    fireBtn.classList.toggle(
+      'ready',
+      (portReady && this.inArc('port')) || (stbdReady && this.inArc('starboard'))
+    );
 
     // contextual buttons
     const bb = $('board-btn');
     const mine = g.playerBoarding();
-    if (mine) {
+    if (!ashore && mine) {
       bb.classList.remove('hidden');
       bb.classList.add('boarding');
       bb.textContent = `✂ Cut Ropes — ${Math.floor(mine.progress * 100)}%`;
-    } else if (g.state === 'playing' && g.boardableTarget()) {
+    } else if (!ashore && g.state === 'playing' && g.boardableTarget()) {
       bb.classList.remove('hidden', 'boarding');
       bb.textContent = '⚔ BOARD';
     } else {
@@ -201,18 +206,31 @@ export class HUD {
     }
 
     const ab = $('anchor-btn');
-    if (f.anchored) {
-      ab.classList.remove('hidden');
-      ab.textContent = '⚓ Weigh Anchor';
-    } else if (g.canAnchor()) {
-      ab.classList.remove('hidden');
-      ab.textContent = '⚓ Drop Anchor';
-    } else {
-      ab.classList.add('hidden');
-    }
-
     const mb = $('market-btn');
-    mb.classList.toggle('hidden', !(g.state === 'playing' && g.nearPort() && !mine));
+    if (ashore) {
+      // ashore: anchor slot = return to ship, market slot = shop door
+      if (g.ashore.phase === 'walk') {
+        ab.classList.remove('hidden');
+        ab.textContent = '⛵ Return to Ship';
+        mb.classList.toggle('hidden', !g.ashore.nearShop());
+        mb.textContent = '🛒 Enter the Market';
+      } else {
+        ab.classList.add('hidden');
+        mb.classList.add('hidden');
+      }
+    } else {
+      if (f.anchored) {
+        ab.classList.remove('hidden');
+        ab.textContent = '⚓ Weigh Anchor';
+      } else if (g.canAnchor()) {
+        ab.classList.remove('hidden');
+        ab.textContent = '⚓ Drop Anchor';
+      } else {
+        ab.classList.add('hidden');
+      }
+      mb.classList.toggle('hidden', !(g.state === 'playing' && f.anchored));
+      mb.textContent = '🚶 Go Ashore';
+    }
 
     // fleet panel — rebuilt when composition/flagship/orders change
     const sig = g.fleet.map((s) => `${s.id}${s === f ? '*' : ''}${s.orders}`).join(',');
@@ -252,10 +270,12 @@ export class HUD {
       fill.style.width = `${(s.hp / s.maxHp) * 100}%`;
     }
 
-    // steering ring
+    // steering / walking ring
     const ring = $('steer-ring');
     const sp = g.input.steerScreen;
-    if (g.state === 'playing' && g.input.pointers.size === 1 && sp && !f.boarding) {
+    const steering = g.state === 'playing' && !f.boarding;
+    const walking = ashore && g.ashore.phase === 'walk';
+    if ((steering || walking) && g.input.pointers.size === 1 && sp) {
       ring.classList.remove('hidden');
       ring.style.left = `${sp.x}px`;
       ring.style.top = `${sp.y}px`;

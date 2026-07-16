@@ -280,3 +280,20 @@ Added from the first family playtest:
   (white = yours, red = Spanish warship, gold = galleon), flagship as a heading
   triangle.
 - **Deck-level zoom** — camera now zooms in close enough to watch your crew.
+
+## 19. Version 1.2 — "The Shore Party Update"
+
+- **One FIRE button** — port/starboard buttons replaced by a single 🔥 FIRE
+  (or Space) that lets fly *both* broadsides; reload cut to 2.2 s, and every
+  class sails ~20% faster still.
+- **Round world** — sail off the edge of the chart and you emerge on the
+  opposite side, camera gliding through the seam. No walls, no borders.
+- **Going ashore in person** — while anchored, tap **🚶 Go Ashore**: your
+  red-coated captain and two hands row in on a little jolly boat (chase-camera
+  cinematic), beach the boat, and then you walk the island in **first person**
+  — hold the pointer to walk toward it (or W/A/S/D), climb the hills for the
+  view. **⛵ Return to Ship** rows you back.
+- **Walk into the market** — at the port town the middle house hangs a gold
+  sign and stacks barrels out front; walk up to its door and **🛒 Enter the
+  Market** opens the shop. Buildings have collision — no ghosting through
+  walls.

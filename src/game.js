@@ -7,6 +7,7 @@ import { CameraRig } from './core/cameraRig.js';
 import { HUD } from './ui/hud.js';
 import { Labels } from './ui/labels.js';
 import { Minimap } from './ui/minimap.js';
+import { AshoreMode } from './ashore/ashore.js';
 import { waveHeight } from './world/waves.js';
 import { toonMat } from './core/toon.js';
 
@@ -93,6 +94,7 @@ export class Game {
     this.hud = new HUD(this);
     this.labels = new Labels(this);
     this.minimap = new Minimap(this);
+    this.ashore = new AshoreMode(this);
   }
 
   addShip(classKey, faction, x, z, heading) {
@@ -110,9 +112,11 @@ export class Game {
 
   // ------------------------------------------------------------ actions
 
-  fire(side) {
+  // one button, two broadsides — iron in every direction
+  fire() {
     if (this.state !== 'playing' || !this.flagship || this.flagship.sinking) return;
-    this.effects.fireBroadside(this.flagship, side);
+    this.effects.fireBroadside(this.flagship, 'port');
+    this.effects.fireBroadside(this.flagship, 'starboard');
   }
 
   setSail(delta) {
@@ -362,6 +366,7 @@ export class Game {
   weighAnchor() {
     const f = this.flagship;
     if (f) f.anchored = false;
+    if (this.ashore?.active) this.ashore.finish();
     if (this.shore) {
       for (const s of this.shore.figures) this.scene.remove(s.fig);
       this.shore = null;
@@ -415,16 +420,31 @@ export class Game {
     }
   }
 
-  // ------------------------------------------------------------ market
+  // ------------------------------------------------------------ ashore & market
 
-  openMarket() {
-    if (this.state !== 'playing' || !this.nearPort() || this.playerBoarding()) return;
-    this.state = 'port';
-    this.hud.showMarket();
+  goAshore() {
+    const isl = this.nearIsland();
+    if (this.state !== 'playing' || !this.flagship?.anchored || !isl || this.ashore.active) return;
+    this.ashore.begin(isl);
+  }
+
+  // the anchor-slot button: weigh/drop anchor at sea, return-to-ship when ashore
+  anchorAction() {
+    if (this.ashore.active) this.ashore.requestReturn();
+    else this.toggleAnchor();
+  }
+
+  // the market-slot button: go ashore when anchored, enter the shop when at its door
+  marketAction() {
+    if (this.ashore.active) {
+      if (this.ashore.nearShop()) this.hud.showMarket();
+    } else {
+      this.goAshore();
+    }
   }
 
   closeMarket() {
-    if (this.state === 'port') this.state = 'playing';
+    // the market is just an overlay now — nothing to unpause
   }
 
   buy(id) {
@@ -573,60 +593,60 @@ export class Game {
   update(dt, t) {
     this.elapsed = t;
     const f = this.flagship;
-    const paused = this.state === 'port';
 
     // the wind slowly veers around the compass
     this.wind.angle += (Math.sin(t * 0.017 + this.wind.seed) * 0.02 + 0.006) * dt;
 
-    if (!paused) {
-      // player helm
-      if (this.state === 'playing' && f && !f.sinking) {
-        const keyR = this.input.keyRudder();
-        if (f.boarding || f.anchored) {
-          f.steerTarget = null;
-        } else if (keyR !== 0) {
-          f.steerTarget = null;
-          f.rudder = keyR;
-        } else if (this.input.steerPoint) {
-          f.steerTarget = this.input.steerPoint.clone();
-        } else {
-          f.steerTarget = null;
-          f.rudder *= Math.max(0, 1 - dt * 4);
-        }
+    // player helm
+    if (this.state === 'playing' && f && !f.sinking) {
+      const keyR = this.input.keyRudder();
+      if (f.boarding || f.anchored) {
+        f.steerTarget = null;
+      } else if (keyR !== 0) {
+        f.steerTarget = null;
+        f.rudder = keyR;
+      } else if (this.input.steerPoint) {
+        f.steerTarget = this.input.steerPoint.clone();
+      } else {
+        f.steerTarget = null;
+        f.rudder *= Math.max(0, 1 - dt * 4);
       }
-
-      // AI
-      let fleetIdx = 0;
-      for (const s of this.ships) {
-        if (s.dead || s.sinking) continue;
-        if (s.faction === 'spain') {
-          updateSpanishAI(s, this, dt);
-        } else if (s !== this.flagship) {
-          updateFleetAI(s, this, dt, fleetIdx++);
-        } else {
-          fleetIdx++;
-        }
-      }
-
-      // simulate
-      for (const s of this.ships) s.update(dt, t);
-      for (let i = this.ships.length - 1; i >= 0; i--) {
-        if (this.ships[i].dead) this.ships.splice(i, 1);
-      }
-
-      this.resolveCollisions(dt);
-      this.updateBoardings(dt);
-      this.updateShore(dt, t);
-      this.updateLoot(dt, t);
-      this.updateWakes(dt);
-      this.effects.update(dt, t);
-      this.updateSpawning(dt);
     }
+
+    // AI
+    let fleetIdx = 0;
+    for (const s of this.ships) {
+      if (s.dead || s.sinking) continue;
+      if (s.faction === 'spain') {
+        updateSpanishAI(s, this, dt);
+      } else if (s !== this.flagship) {
+        updateFleetAI(s, this, dt, fleetIdx++);
+      } else {
+        fleetIdx++;
+      }
+    }
+
+    // simulate
+    for (const s of this.ships) s.update(dt, t);
+    for (let i = this.ships.length - 1; i >= 0; i--) {
+      if (this.ships[i].dead) this.ships.splice(i, 1);
+    }
+
+    this.resolveCollisions(dt);
+    this.updateBoardings(dt);
+    this.updateShore(dt, t);
+    this.updateLoot(dt, t);
+    this.updateWakes(dt);
+    this.effects.update(dt, t);
+    this.updateSpawning(dt);
 
     this.rig.zoom(this.input.consumeZoom());
 
-    // camera + audio focus
-    if (f) {
+    // camera + audio focus: the ashore mode drives its own camera
+    if (this.ashore.active) {
+      this.ashore.update(dt, t);
+      this.sound.listener = this.ashore.captain?.pos ?? f?.pos;
+    } else if (f) {
       this.rig.update(f, dt);
       this.sound.listener = f.pos;
     }
@@ -646,6 +666,16 @@ export class Game {
       this.sound.fanfare();
       this.hud.banner('⚑ TERROR OF THE SPANISH MAIN ⚑<br><small>10,000 gold and a ship of the line — the Crown salutes you</small>', 8000);
     }
+  }
+
+  // a ship crossed the world edge and reappeared on the far side —
+  // shift the camera with the flagship so the jump is invisible
+  onShipWrapped(ship, dx, dz) {
+    if (ship !== this.flagship) return;
+    this.rig.pos.x += dx;
+    this.rig.pos.z += dz;
+    this.rig.look.x += dx;
+    this.rig.look.z += dz;
   }
 
   resolveCollisions(dt) {

@@ -112,9 +112,9 @@ button {
 button:active { transform: scale(0.96); }
 
 .fire-btn {
-  min-width: 128px;
+  min-width: 150px;
   min-height: 58px;
-  font-size: 17px;
+  font-size: 20px;
   transition: box-shadow 0.15s, border-color 0.15s;
 }
 .fire-btn.ready {

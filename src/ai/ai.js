@@ -9,8 +9,8 @@ function nearestEnemy(ship, game) {
   let bestD = Infinity;
   for (const s of game.ships) {
     if (s.dead || s.sinking || s.faction === ship.faction) continue;
-    // the port is a safe harbor — the Spanish won't chase you into it
-    if (ship.faction === 'spain' && game.isSafeHarbor(s.pos)) continue;
+    // the port is a safe harbor, and an anchored ship with struck sails is left alone
+    if (ship.faction === 'spain' && (game.isSafeHarbor(s.pos) || s.anchored)) continue;
     const d = ship.pos.distanceTo(s.pos);
     if (d < bestD) {
       bestD = d;

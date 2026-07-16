@@ -38,7 +38,7 @@ export class Ship {
     this.gold = Math.round(rand(this.def.gold[0], this.def.gold[1]));
 
     this.reload = { port: 0, starboard: 0 };
-    this.reloadTime = factionKey === 'england' ? 3.5 : 5.5 + Math.random() * 1.5;
+    this.reloadTime = factionKey === 'england' ? 2.2 : 4.5 + Math.random() * 1.2;
 
     this.sinking = false;
     this.sinkT = 0;
@@ -182,10 +182,15 @@ export class Ship {
     this.pos.x += Math.sin(this.heading) * this.speed * dt;
     this.pos.z += Math.cos(this.heading) * this.speed * dt;
 
-    // --- world border ---
+    // --- world edge: sail off one side, reappear on the opposite one ---
     const r = Math.hypot(this.pos.x, this.pos.z);
-    if (r > 840) {
-      this.pos.multiplyScalar(840 / r);
+    if (r > 860 && !this.boarding) {
+      const oldX = this.pos.x;
+      const oldZ = this.pos.z;
+      const scale = -(2 * 852 - r) / r; // antipode, just inside the rim
+      this.pos.x *= scale;
+      this.pos.z *= scale;
+      this.game.onShipWrapped?.(this, this.pos.x - oldX, this.pos.z - oldZ);
     }
 
     // --- island collision ---
