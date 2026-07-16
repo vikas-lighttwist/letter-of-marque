@@ -115,6 +115,17 @@ export class Game {
     this.ashore = new AshoreMode(this);
     this.tavernInterior = buildTavernInterior(scene);
 
+    // the tavern folk have things to say (only reachable when you're inside)
+    const inn = this.tavernInterior;
+    this.clickables.push(
+      { obj: inn.megFig, fn: () => this.pirateTapped(inn.megFig, 'meg') },
+      { obj: inn.barkeepFig, fn: () => this.pirateTapped(inn.barkeepFig, 'barkeep') }
+    );
+    for (const p of inn.patrons) {
+      if (p === inn.megFig) continue;
+      this.clickables.push({ obj: p, fn: () => this.pirateTapped(p, 'patron') });
+    }
+
     // the captain stands the quarterdeck of whatever ship you command
     this.deckCap = makeCaptain();
     this.clickables.push(
@@ -165,6 +176,48 @@ export class Game {
     p.y += 2.2;
     this.hud.floaterAt(p, line, 'speech');
     if (this.sound.ready()) this.sound.blip(240, 0, 0.12, 0.2, 'triangle');
+  }
+
+  // tavern folk, seasoned with a little Treasure Island
+  pirateTapped(fig, kind) {
+    const POOLS = {
+      patron: [
+        '"Fifteen men on a dead man\'s chest — yo ho ho!"',
+        '"Keep a weather eye out for a one-legged seafaring man."',
+        '"I sailed with Flint once. Or a fella called Flint. Or his parrot."',
+        '"X marks the spot, they say. They say a lot o\' things."',
+        '"Black spots? Bah. Superstition… mostly."',
+        '"Sixteen years ashore an\' the floor still rolls."',
+        '"Never bet yer ship against Meg. …I had three."',
+        '"They buried it, I tell ye! Doubloons deep as yer knee!"',
+        '"I knew a sea-cook once. Tall fellow. Made a fine stew."',
+      ],
+      meg: [
+        '"Sit down or shove off, Captain."',
+        '"The dice be honest. Me? Mostly."',
+        '"I won me first sloop off a man twice yer size."',
+        '"Flint himself feared two things: the gallows, an\' my cargo rolls."',
+      ],
+      barkeep: [
+        '"Stew\'s hot, fizz is cold, floor\'s mostly clean."',
+        '"No brawlin\'. The last fella who brawled swabs me pots now."',
+        '"Ginger grog — strong enough to curl yer beard, honest enough for a bosun."',
+        '"That parrot o\' yours eats more biscuit than my whole taproom."',
+      ],
+    };
+    const pool = POOLS[kind];
+    let line;
+    do {
+      line = pool[Math.floor(Math.random() * pool.length)];
+    } while (line === this._lastPirateLine && pool.length > 1);
+    this._lastPirateLine = line;
+    const p = new THREE.Vector3();
+    fig.getWorldPosition(p);
+    p.y += 1.8;
+    this.hud.floaterAt(p, line, 'speech');
+    if (this.sound.ready()) {
+      this.sound.blip(150 + Math.random() * 80, 0, 0.16, 0.18, 'triangle'); // a low "harr"
+    }
   }
 
   updateDeckCaptain(dt, t) {

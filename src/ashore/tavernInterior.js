@@ -103,10 +103,10 @@ export function buildTavernInterior(scene) {
     b.position.set(-9 + i * 1.6, 3.45, -D / 2 + 0.7);
     g.add(b);
   });
-  const barkeep = figure(0xe8e0cc, 0x8a6437, { bandana: true });
-  barkeep.position.set(-5, 0, -D / 2 + 1.3);
-  barkeep.rotation.y = 0; // facing the room (+z)
-  g.add(barkeep);
+  const barkeepFig = figure(0xe8e0cc, 0x8a6437, { bandana: true });
+  barkeepFig.position.set(-5, 0, -D / 2 + 1.3);
+  barkeepFig.rotation.y = 0; // facing the room (+z)
+  g.add(barkeepFig);
 
   // tables with pirate patrons
   const patrons = [];
@@ -139,7 +139,8 @@ export function buildTavernInterior(scene) {
     }
     if (spot.meg) {
       // One-Eyed Meg herself: purple coat, wide black hat, the patch
-      const meg = figure(0x5a3a6e, 0x14100c, { eyepatch: true, mug: true });
+      var megFig = figure(0x5a3a6e, 0x14100c, { eyepatch: true, mug: true });
+      const meg = megFig;
       const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.36, 0.05, 10), toonMat(0x14100c));
       brim.position.y = 1.0;
       meg.add(brim);
@@ -197,5 +198,7 @@ export function buildTavernInterior(scene) {
     },
     obstacles: obstacles.map((o) => ({ x: ORIGIN.x + o.x, z: ORIGIN.z + o.z, r: o.r })),
     patrons,
+    barkeepFig,
+    megFig,
   };
 }

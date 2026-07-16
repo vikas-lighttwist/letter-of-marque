@@ -310,6 +310,11 @@ tavern with games, a visible captain"):
   (purple coat, eye patch, wide black hat) at her corner table with dice on
   it. Walk up to the barkeep to order, to Meg to gamble, to the wall board
   for bounties; the door leads back to the beach.
+- **Chatty regulars** — tap any pirate in the tavern for a line steeped in
+  Treasure Island ("Fifteen men on a dead man's chest — yo ho ho!", "Keep a
+  weather eye out for a one-legged seafaring man", "I sailed with Flint
+  once. Or a fella called Flint. Or his parrot."). Meg and the barkeep have
+  their own repertoires; whoever's nearest to your tap answers.
 - **A merchant at the market** — the shop is now an awning stall with goods
   on the counter (coin pile, a small cannon, cloth bolts, barrels) and a
   straw-hatted merchant behind it; trade opens when you walk up to him.

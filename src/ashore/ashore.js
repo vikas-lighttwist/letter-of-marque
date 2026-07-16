@@ -279,6 +279,13 @@ export class AshoreMode {
     const k = 1 - Math.exp(-dt * 6);
     this.camPos.lerp(wantPos, k);
     this.camLook.lerp(wantLook, k);
+    if (inside) {
+      // keep the camera inside the room walls
+      const b = g.tavernInterior.bounds;
+      this.camPos.x = Math.min(b.x1, Math.max(b.x0, this.camPos.x));
+      this.camPos.z = Math.min(b.z1, Math.max(b.z0, this.camPos.z));
+      this.camPos.y = Math.min(g.tavernInterior.floorY + 5, this.camPos.y);
+    }
     g.camera.position.copy(this.camPos);
     g.camera.lookAt(this.camLook);
   }
