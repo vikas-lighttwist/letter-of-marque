@@ -118,6 +118,7 @@ export class Game {
     // the tavern folk have things to say (only reachable when you're inside)
     const inn = this.tavernInterior;
     this.clickables.push(
+      { obj: inn.innParrot, fn: () => this.parrotTapped(inn.innParrot) },
       { obj: inn.megFig, fn: () => this.pirateTapped(inn.megFig, 'meg') },
       { obj: inn.barkeepFig, fn: () => this.pirateTapped(inn.barkeepFig, 'barkeep') }
     );

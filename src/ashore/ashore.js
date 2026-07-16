@@ -316,6 +316,7 @@ export class AshoreMode {
     this.captain.yaw = Math.PI; // face into the room (-z)
     this.room = 'tavern';
     this.game.input.seaPlane.constant = -inn.floorY; // pointer-walk on the tavern floor
+    this.game.sound.startShanty();
     // snap the camera behind him so we don't lerp through the sea floor
     const back = new THREE.Vector3(Math.sin(this.captain.yaw), 0, Math.cos(this.captain.yaw));
     this.camPos.copy(this.captain.pos).addScaledVector(back, -4).add(new THREE.Vector3(0, 2.4, 0));
@@ -327,6 +328,7 @@ export class AshoreMode {
     if (this.room !== 'tavern') return;
     this.room = 'island';
     this.game.input.seaPlane.constant = 0;
+    this.game.sound.stopShanty();
     this.captain.pos.copy(this.savedIslandPos);
     this.captain.yaw = this.savedIslandYaw + Math.PI; // walk back out facing away
     const back = new THREE.Vector3(Math.sin(this.captain.yaw), 0, Math.cos(this.captain.yaw));
@@ -348,6 +350,7 @@ export class AshoreMode {
   finish() {
     this.room = 'island';
     this.game.input.seaPlane.constant = 0;
+    this.game.sound.stopShanty();
     if (this.boat) this.game.scene.remove(this.boat);
     if (this.captainMesh?.parent === this.game.scene) this.game.scene.remove(this.captainMesh);
     if (this._clickables) {

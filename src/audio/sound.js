@@ -114,6 +114,102 @@ export class Sound {
     }
   }
 
+  // ---------------------------------------------------------------- shanty
+  // An original 6/8 tavern jig, scheduled loop by loop: plucky squarewave
+  // lead, walking triangle bass, foot-stomps and a tick on the offbeats.
+
+  midiHz(m) {
+    return 440 * Math.pow(2, (m - 69) / 12);
+  }
+
+  shantyNote(freq, t, dur, vol, type = 'square', filterHz = 1900) {
+    const osc = this.ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq;
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = filterHz;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(vol, t + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(lp).connect(gain).connect(this.shantyGain);
+    osc.start(t);
+    osc.stop(t + dur + 0.03);
+  }
+
+  scheduleShantyLoop(t0) {
+    const e = 0.21; // one eighth note in a brisk 6/8
+    // melody in A dorian, two answering phrases (0 = rest, negative = hold)
+    const lead = [
+      69, 72, 76, 74, 72, 71, 69, 71, 72, 71, 69, 67,
+      69, 72, 76, 79, 76, 74, 72, 74, 71, 69, -1, -1,
+      76, 79, 81, 79, 76, 74, 76, 74, 72, 74, 72, 71,
+      72, 74, 76, 74, 72, 71, 69, 71, 71, 69, -1, -1,
+    ];
+    const bass = [45, 45, 43, 43, 41, 43, 40, 45, 48, 47, 45, 43, 41, 43, 40, 45];
+    for (let i = 0; i < lead.length; i++) {
+      const n = lead[i];
+      if (n > 0) {
+        const hold = lead[i + 1] === -1 ? (lead[i + 2] === -1 ? 3 : 2) : 1;
+        this.shantyNote(this.midiHz(n), t0 + i * e, e * hold * 0.92, 0.085);
+      }
+    }
+    for (let i = 0; i < bass.length; i++) {
+      this.shantyNote(this.midiHz(bass[i]), t0 + i * e * 3, e * 2.6, 0.11, 'triangle', 500);
+    }
+    // stomps on the downbeats, tick on the lift
+    for (let bar = 0; bar < 16; bar++) {
+      const bt = t0 + bar * e * 3;
+      const stomp = this.ctx.createOscillator();
+      stomp.type = 'sine';
+      stomp.frequency.setValueAtTime(85, bt);
+      stomp.frequency.exponentialRampToValueAtTime(45, bt + 0.09);
+      const sg = this.ctx.createGain();
+      sg.gain.setValueAtTime(0.35, bt);
+      sg.gain.exponentialRampToValueAtTime(0.001, bt + 0.1);
+      stomp.connect(sg).connect(this.shantyGain);
+      stomp.start(bt);
+      stomp.stop(bt + 0.12);
+      const tick = this.ctx.createBufferSource();
+      tick.buffer = this.noiseBuffer(0.03);
+      const hp = this.ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 4000;
+      const tg = this.ctx.createGain();
+      tg.gain.setValueAtTime(0.05, bt + e * 2);
+      tg.gain.exponentialRampToValueAtTime(0.001, bt + e * 2 + 0.03);
+      tick.connect(hp).connect(tg).connect(this.shantyGain);
+      tick.start(bt + e * 2);
+    }
+    return 48 * e; // loop length in seconds
+  }
+
+  startShanty() {
+    if (this.shantyOn || !this.ctx) return;
+    this.shantyOn = true;
+    if (!this.shantyGain) {
+      this.shantyGain = this.ctx.createGain();
+      this.shantyGain.connect(this.master);
+    }
+    this.shantyGain.gain.value = 0.5;
+    const loop = () => {
+      if (!this.shantyOn) return;
+      const dur = this.scheduleShantyLoop(this.ctx.currentTime + 0.08);
+      this.shantyTimer = setTimeout(loop, (dur - 0.05) * 1000);
+    };
+    loop();
+  }
+
+  stopShanty() {
+    this.shantyOn = false;
+    clearTimeout(this.shantyTimer);
+    // let scheduled notes ring out quietly rather than cutting hard
+    if (this.shantyGain && this.ctx) {
+      this.shantyGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.4);
+    }
+  }
+
   dolphin() {
     if (!this.ready()) return;
     this.blip(950, 0, 0.12, 0.12, 'sine');
