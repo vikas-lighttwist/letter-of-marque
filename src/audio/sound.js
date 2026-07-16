@@ -144,33 +144,41 @@ export class Sound {
     }
   }
 
-  // the parrot "voice": browser speech synthesis pitched to the rafters,
-  // led in by a screech. Falls back to just the squawk if TTS is missing.
-  parrotVoice() {
-    if (this._parrotVoice) return this._parrotVoice;
-    const voices = window.speechSynthesis?.getVoices() ?? [];
-    if (voices.length === 0) return null; // Chrome loads voices async — retry next squawk
-    const en = voices.filter((v) => v.lang?.startsWith('en'));
-    this._parrotVoice =
-      en.find((v) => /samantha|karen|tessa|moira|zira|female/i.test(v.name)) ||
-      en[0] || voices[0] || null;
-    return this._parrotVoice;
+  // the parrot's voice: real recordings, one picked at random per tap
+  async loadParrotClips() {
+    if (this._parrotClips) return this._parrotClips;
+    const files = [
+      './sounds/parrot-pieces-of-eight.wav',
+      './sounds/parrot-pretty-boy.wav',
+      './sounds/parrot-inquisitive.wav',
+    ];
+    this._parrotClips = await Promise.all(
+      files.map(async (url) => {
+        const res = await fetch(url);
+        const buf = await res.arrayBuffer();
+        return this.ctx.decodeAudioData(buf);
+      })
+    );
+    return this._parrotClips;
   }
 
-  parrotSay(text) {
-    this.squawk();
-    if (this.muted || !('speechSynthesis' in window)) return;
+  async parrotClip() {
+    if (!this.ready()) return;
     try {
-      speechSynthesis.cancel(); // no parrot backlog
-      const u = new SpeechSynthesisUtterance(`Rawk! ${text}`);
-      u.pitch = 2; // as squawky as the API allows
-      u.rate = 1.2 + Math.random() * 0.2;
-      u.volume = 1;
-      const v = this.parrotVoice();
-      if (v) u.voice = v;
-      setTimeout(() => speechSynthesis.speak(u), 200); // screech leads, words follow
+      const clips = await this.loadParrotClips();
+      let i;
+      do {
+        i = Math.floor(Math.random() * clips.length);
+      } while (i === this._lastClip && clips.length > 1);
+      this._lastClip = i;
+      const src = this.ctx.createBufferSource();
+      src.buffer = clips[i];
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0.9;
+      src.connect(gain).connect(this.master);
+      src.start();
     } catch {
-      // some embedded browsers stub the API — the squawk already played
+      this.squawk(); // couldn't fetch/decode — screech instead
     }
   }
 }
