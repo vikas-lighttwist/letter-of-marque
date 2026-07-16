@@ -1,7 +1,7 @@
-# Letters of Marque — Game Design Document
+# Letter of Marque — Game Design Document
 
 *A cel-shaded 3D naval action game for the browser. You are an English privateer in the
-Caribbean, circa 1670, carrying a letter of marque from the Crown: every Spanish sail on
+Caribbean, out of Port Royal in 1668, carrying a letter of marque: every Spanish sail on
 the horizon is a prize waiting to be taken.*
 
 ---

@@ -27,29 +27,24 @@ export class HUD {
 
   showIntro(onStart) {
     const card = $('overlay-card');
+    $('overlay').classList.add('title-screen');
     card.innerHTML = `
-      <h1>Letters of Marque</h1>
-      <h2>The Caribbean, 1670 — you carry the Crown's letter of marque.<br>
-      Every Spanish sail is a prize. Weaken them, board them, take them whole.</h2>
-      <table>
-        <tr><td>Steer</td><td>hold / drag on the sea — the ship follows the ring</td></tr>
-        <tr><td>Sails</td><td>− / + buttons &nbsp;(or W / S)</td></tr>
-        <tr><td>Wind</td><td>watch the dial — run with the wind for a burst of speed</td></tr>
-        <tr><td>Fire</td><td>the 🔥 FIRE button lets fly both broadsides &nbsp;(or Space) — it glows when guns bear</td></tr>
-        <tr><td>Board</td><td>green BOARD button when a weakened enemy is alongside &nbsp;(or F)</td></tr>
-        <tr><td>Fleet</td><td>tap a ship in the fleet panel to command her (or C) — set the rest to ⚑ follow or ⚔ hunt</td></tr>
-        <tr><td>Islands</td><td>slow down near shore, ⚓ anchor, then 🚶 go ashore and explore on foot</td></tr>
-        <tr><td>Port</td><td>row into the ⚓ gold island and walk to the market for cannon and crew</td></tr>
-        <tr><td>The edge</td><td>sail off the edge of the chart and you'll appear on the far side</td></tr>
-        <tr><td>Zoom</td><td>scroll or pinch</td></tr>
-      </table>
-      <p>Sink a ship and half her gold drowns with her. <b>Board her instead</b> — take all
-      the gold, part of the crew, and the ship herself joins your fleet. Grow strong enough
-      to take a <b>Ship of the Line</b> and amass 10,000 gold.</p>
-      <button class="big-btn" id="start-btn">⚓ Set Sail</button>`;
+      <div class="tc-masthead">Letter of Marque</div>
+      <div class="tc-title">Port Royal — 1668</div>
+      <div class="tc-body">
+        England has taken Jamaica from Spain<br>
+        The wealth of an empire still sails the Spanish Main, guarded by galleons that give no quarter<br>
+        The governors of Port Royal grant letters of marque to any buccaneer bold enough to take it
+      </div>
+      <div class="tc-letter">You hold such a letter</div>
+      <div class="tc-age">It is the Golden Age of Piracy</div>
+      <button id="start-btn" class="tc-btn">Set Sail</button>
+      <div class="tc-hints">hold the sea to steer &nbsp;·&nbsp; fire lets fly both broadsides &nbsp;·&nbsp;
+      board weakened ships to take them &nbsp;·&nbsp; anchor at islands and go ashore</div>`;
     $('overlay').classList.remove('hidden');
     $('start-btn').addEventListener('click', () => {
       $('overlay').classList.add('hidden');
+      $('overlay').classList.remove('title-screen');
       $('hud').classList.remove('hidden');
       onStart();
     });

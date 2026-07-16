@@ -1,4 +1,4 @@
-# Letters of Marque
+# Letter of Marque
 
 A cel-shaded 3D naval action game for the browser. You are an English privateer in the
 Caribbean — hunt Spanish ships, weaken them with broadsides, **board** them to seize
