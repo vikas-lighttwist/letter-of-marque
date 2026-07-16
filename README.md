@@ -23,6 +23,7 @@ Works with a trackpad, mouse, or touchscreen:
 - **Fleet** — tap a ship in the fleet panel to command her (or `C`); set the others to ⚑ follow or ⚔ hunt on their own.
 - **Islands** — slow down near shore, `⚓ Drop Anchor`, then `🚶 Go Ashore`: row in and explore in third person. Tap the captain's parrot — trust us.
 - **Port** — the gold ⚓ island on the minimap is a safe harbor; walk up to the market house to buy cannon, crew, repairs.
+- **The Thirsty Parrot** — the port tavern: buy the crew food and fizz for real speed/repair buffs, buy treasure maps and go **dig up chests**, and play *Ship, Captain & Crew* dice against One-Eyed Meg for gold — or bet a whole ship.
 - **The edge** — sail off the chart and you appear on the far side.
 - **Zoom** — scroll / pinch, down to deck level.
 

@@ -40,7 +40,7 @@ export class HUD {
       <div class="tc-age">It is the Golden Age of Piracy</div>
       <button id="start-btn" class="tc-btn">Set Sail</button>
       <div class="tc-hints">hold the sea to steer &nbsp;·&nbsp; fire lets fly both broadsides &nbsp;·&nbsp;
-      board weakened ships to take them &nbsp;·&nbsp; anchor at islands and go ashore</div>`;
+      board weakened ships to take them &nbsp;·&nbsp; go ashore — the tavern has food, dice and maps</div>`;
     $('overlay').classList.remove('hidden');
     $('start-btn').addEventListener('click', () => {
       $('overlay').classList.add('hidden');

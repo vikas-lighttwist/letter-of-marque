@@ -281,6 +281,33 @@ Added from the first family playtest:
   triangle.
 - **Deck-level zoom** — camera now zooms in close enough to watch your crew.
 
+## 19½. Version 1.3 — "The Thirsty Parrot Update"
+
+Built overnight from the family wishlist ("make it super fun, add ocean sounds, a
+tavern with games, a visible captain"):
+
+- **A living soundscape** — endless procedural sea-swell ambience, gull cries near
+  land, rigging creaks under way, sword-clank boarding melees, and a proper mute.
+- **The captain walks his deck** — tricorn, feather, parrot and all, on whatever
+  ship you command. Tap him for a salty line; tap the parrot for a squawk. Works
+  ashore too.
+- **The Thirsty Parrot tavern** at the port (red roof, lanterns, a parrot on the
+  sign). The galley sells *gameplay*: Coconut Fizz (+15% fleet speed, 90 s), Hot
+  Fish Stew (3× repairs, 90 s), Plum Duff (+3 crew) — all resolutely alcohol-free.
+- **Ship, Captain & Crew** — the real pirate dice game, against One-Eyed Meg.
+  Three rolls to lock ⚅ ship, ⚄ captain, ⚃ crew, in order; the last two dice are
+  cargo; highest cargo takes the pot. Stake 25/100/500 gold — or **bet a ship**:
+  Meg matches your hull with one of hers. Win and it anchors off the port; lose
+  and she sails yours away under her own colors.
+- **Treasure maps** (150 g at the tavern) — a red ✕ appears on the minimap and
+  crossed planks on a random island. Walk your captain onto the spot, hit **DIG**,
+  and a chest rises with 400–900 gold.
+- **Wildlife** — seagulls wheel over every island; dolphin pods leap across your
+  bow with splashes and chirps.
+- **Sharper combat feel** — camera shake when your flagship is hit, hulls under
+  40 % health wallow at ¾ speed, and once you hold 800+ gold, Spanish hunter
+  frigates (with fattened pay chests) spawn on your trail every ~5 minutes.
+
 ## 19. Version 1.2 — "The Shore Party Update"
 
 - **One FIRE button** — port/starboard buttons replaced by a single 🔥 FIRE
