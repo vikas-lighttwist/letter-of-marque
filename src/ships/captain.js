@@ -69,6 +69,14 @@ export function makeCaptain() {
   tail.position.set(0, -0.16, -0.09);
   tail.rotation.x = 0.55;
   parrot.add(tail);
+
+  // generous invisible tap target — the bird itself is a tiny mark to hit
+  const hit = new THREE.Mesh(
+    new THREE.SphereGeometry(0.55, 8, 6),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+  );
+  hit.position.y = 0.08;
+  parrot.add(hit);
   g.add(parrot);
 
   return { group: g, parrot };
