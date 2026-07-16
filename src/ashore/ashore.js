@@ -28,6 +28,79 @@ function makeFigure(bodyColor, hatColor, scale = 1) {
   return fig;
 }
 
+// The captain: red coat, proper tricorn with gold band and feather,
+// and a parrot on the shoulder (returns the parrot for click-picking).
+function makeCaptain() {
+  const g = new THREE.Group();
+  const black = toonMat(0x1d1a16);
+
+  const coat = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.32, 0.78, 7), toonMat(0x8c2f2f));
+  coat.position.y = 0.39;
+  g.add(coat);
+  const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.28, 0.09, 7), black);
+  belt.position.y = 0.42;
+  g.add(belt);
+  const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.03), toonMat(0xd9a94a));
+  buckle.position.set(0, 0.42, 0.27);
+  g.add(buckle);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.19, 8, 6), toonMat(0xd8a377));
+  head.position.y = 0.95;
+  g.add(head);
+
+  // tricorn hat
+  const hat = new THREE.Group();
+  hat.position.y = 1.1;
+  const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 0.045, 12), black);
+  hat.add(brim);
+  const crown = new THREE.Mesh(new THREE.SphereGeometry(0.21, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2), black);
+  crown.scale.y = 0.85;
+  crown.position.y = 0.02;
+  hat.add(crown);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.225, 0.06, 12), toonMat(0xd9a94a));
+  band.position.y = 0.05;
+  hat.add(band);
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + Math.PI / 6;
+    const holder = new THREE.Group();
+    holder.rotation.y = a;
+    const flap = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.04, 0.16), black);
+    flap.position.set(0.3, 0.1, 0);
+    flap.rotation.z = 0.6;
+    holder.add(flap);
+    hat.add(holder);
+  }
+  const feather = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.34, 5), toonMat(0xe8e0cc));
+  feather.position.set(0.28, 0.22, 0.12);
+  feather.rotation.z = -0.7;
+  hat.add(feather);
+  g.add(hat);
+
+  // the parrot, on the right shoulder
+  const parrot = new THREE.Group();
+  parrot.position.set(-0.3, 0.82, 0.04);
+  const pBody = new THREE.Mesh(new THREE.SphereGeometry(0.11, 7, 6), toonMat(0x2fae4a));
+  pBody.scale.set(1, 1.3, 1);
+  parrot.add(pBody);
+  const pHead = new THREE.Mesh(new THREE.SphereGeometry(0.08, 7, 6), toonMat(0xd9342b));
+  pHead.position.set(0, 0.18, 0.03);
+  parrot.add(pHead);
+  const beak = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.09, 5), toonMat(0xf2a33c));
+  beak.position.set(0, 0.17, 0.12);
+  beak.rotation.x = Math.PI / 2;
+  parrot.add(beak);
+  const wing = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 5), toonMat(0x1f8f3a));
+  wing.scale.set(0.5, 1.1, 1);
+  wing.position.set(-0.09, 0, 0);
+  parrot.add(wing);
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.2, 0.05), toonMat(0x1f7fae));
+  tail.position.set(0, -0.16, -0.09);
+  tail.rotation.x = 0.55;
+  parrot.add(tail);
+  g.add(parrot);
+
+  return { group: g, parrot };
+}
+
 function makeRowboat() {
   const g = new THREE.Group();
   const hullGeo = new THREE.BoxGeometry(1.7, 0.75, 4.2, 1, 1, 4);
@@ -55,11 +128,7 @@ function makeRowboat() {
     g.add(oar);
     g.userData['oar' + side] = oar;
   }
-  // captain (red coat) at the bow, two hands rowing
   const fac = FACTIONS.england;
-  const captain = makeFigure(0x8c2f2f, 0x2b2015, 0.95);
-  captain.position.set(0, 0.55, 1.35);
-  g.add(captain);
   for (const bz of [-1.0, 0.2]) {
     const hand = makeFigure(fac.crewBody, fac.crewHat, 0.85);
     hand.position.set(0, 0.6, bz);
@@ -69,13 +138,33 @@ function makeRowboat() {
   return g;
 }
 
-// Rowboat cinematic + first-person captain walking on an island.
+// Rowboat cinematic + third-person captain walking on an island.
 export class AshoreMode {
   constructor(game) {
     this.game = game;
     this.active = false;
     this.camPos = new THREE.Vector3();
     this.camLook = new THREE.Vector3();
+    this.raycaster = new THREE.Raycaster();
+    this.squawkCooldown = 0;
+
+    // tap the parrot → "Pieces of eight!"
+    window.addEventListener('pointerdown', (e) => {
+      if (!this.active || !this.parrot || this.squawkCooldown > 0) return;
+      const ndc = new THREE.Vector2(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -(e.clientY / window.innerHeight) * 2 + 1
+      );
+      this.raycaster.setFromCamera(ndc, this.game.camera);
+      if (this.raycaster.intersectObject(this.parrot, true).length > 0) {
+        this.squawkCooldown = 1.2;
+        this.game.sound.squawk();
+        const p = new THREE.Vector3();
+        this.parrot.getWorldPosition(p);
+        p.y += 0.6;
+        this.game.hud.floaterAt(p, '🦜 Pieces of eight!', 'speech');
+      }
+    });
   }
 
   begin(island) {
@@ -103,7 +192,14 @@ export class AshoreMode {
       yaw: toShip + Math.PI, // face inland
     };
 
+    const cap = makeCaptain();
+    this.captainMesh = cap.group;
+    this.parrot = cap.parrot;
+
     this.boat = makeRowboat();
+    this.captainMesh.position.set(0, 0.55, 1.35); // standing proud at the bow
+    this.captainMesh.rotation.y = 0;
+    this.boat.add(this.captainMesh);
     const dir = new THREE.Vector3().subVectors(this.beachPoint, f.pos).setY(0).normalize();
     this.boat.position.copy(f.pos).addScaledVector(dir, f.def.wid * 0.5 + 3);
     g.scene.add(this.boat);
@@ -117,6 +213,7 @@ export class AshoreMode {
   update(dt, t) {
     if (!this.active) return;
     const g = this.game;
+    this.squawkCooldown = Math.max(0, this.squawkCooldown - dt);
 
     if (this.phase === 'row-in' || this.phase === 'row-out') {
       const target = this.phase === 'row-in' ? this.beachPoint : this.shipSide();
@@ -149,11 +246,12 @@ export class AshoreMode {
       return;
     }
 
-    // ----- walking, first person ----------------------------------
+    // ----- walking, third person -----------------------------------
     const c = this.captain;
     const isl = this.island;
 
     // pointer: walk toward the held point; keys: A/D turn, W/S walk
+    let moving = false;
     let moveX = 0;
     let moveZ = 0;
     const sp = g.input.steerPoint;
@@ -166,14 +264,18 @@ export class AshoreMode {
         c.yaw += angleDiff(wantYaw, c.yaw) * Math.min(1, dt * 5);
         moveX = Math.sin(c.yaw);
         moveZ = Math.cos(c.yaw);
+        moving = true;
       }
     } else {
       const keys = g.input.keys;
       const turn = (keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0);
       c.yaw += turn * 2.4 * dt;
       const fwd = (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 0.6 : 0);
-      moveX = Math.sin(c.yaw) * fwd;
-      moveZ = Math.cos(c.yaw) * fwd;
+      if (fwd !== 0) {
+        moveX = Math.sin(c.yaw) * fwd;
+        moveZ = Math.cos(c.yaw) * fwd;
+        moving = true;
+      }
     }
     c.pos.x += moveX * WALK_SPEED * dt;
     c.pos.z += moveZ * WALK_SPEED * dt;
@@ -203,22 +305,37 @@ export class AshoreMode {
     }
     c.pos.y = this.groundY(c.pos.x, c.pos.z);
 
-    // first-person camera
-    const eye = c.pos.clone().add(new THREE.Vector3(0, 1.7, 0));
-    g.camera.position.copy(eye);
-    g.camera.lookAt(
-      eye.x + Math.sin(c.yaw),
-      eye.y - 0.14,
-      eye.z + Math.cos(c.yaw)
-    );
+    // captain mesh: position, facing, and a jaunty walk bob
+    const m = this.captainMesh;
+    m.position.copy(c.pos);
+    m.rotation.set(0, c.yaw, 0);
+    if (moving) {
+      m.position.y += Math.abs(Math.sin(t * 8)) * 0.07;
+      m.rotation.z = Math.sin(t * 8) * 0.05;
+    }
+    // the parrot bobs along
+    this.parrot.rotation.z = Math.sin(t * 3.1) * 0.08;
+
+    // third-person camera, over the shoulder
+    const back = new THREE.Vector3(Math.sin(c.yaw), 0, Math.cos(c.yaw));
+    const wantPos = c.pos.clone().addScaledVector(back, -5.2).add(new THREE.Vector3(0, 3.0, 0));
+    const wantLook = c.pos.clone().addScaledVector(back, 2.5).add(new THREE.Vector3(0, 1.3, 0));
+    const k = 1 - Math.exp(-dt * 6);
+    this.camPos.lerp(wantPos, k);
+    this.camLook.lerp(wantLook, k);
+    g.camera.position.copy(this.camPos);
+    g.camera.lookAt(this.camLook);
   }
 
   arrive(t) {
     this.phase = 'walk';
-    // beach the boat at the waterline
+    // beach the boat and step out
     this.boat.position.y = 0.35;
     this.boat.rotation.z = 0.06;
-    this.game.hud.banner('🚶 Ashore — walk with the held pointer (or W/A/S/D)');
+    this.boat.remove(this.captainMesh);
+    this.game.scene.add(this.captainMesh);
+    this.captainMesh.position.copy(this.captain.pos);
+    this.game.hud.banner('🚶 Ashore — hold the pointer to walk. Try tapping the parrot!');
   }
 
   shipSide() {
@@ -229,11 +346,19 @@ export class AshoreMode {
   requestReturn() {
     if (this.phase !== 'walk') return;
     this.phase = 'row-out';
+    // back into the boat
+    this.game.scene.remove(this.captainMesh);
+    this.captainMesh.position.set(0, 0.55, 1.35);
+    this.captainMesh.rotation.set(0, 0, 0);
+    this.boat.add(this.captainMesh);
   }
 
   finish() {
     if (this.boat) this.game.scene.remove(this.boat);
+    if (this.captainMesh?.parent === this.game.scene) this.game.scene.remove(this.captainMesh);
     this.boat = null;
+    this.captainMesh = null;
+    this.parrot = null;
     this.active = false;
     if (this.game.state === 'ashore') this.game.state = 'playing';
   }

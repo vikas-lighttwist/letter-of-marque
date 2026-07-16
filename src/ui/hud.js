@@ -124,16 +124,16 @@ export class HUD {
     this.bannerT = setTimeout(() => b.classList.add('hidden'), ms);
   }
 
-  floaterAt(worldPos, text) {
+  floaterAt(worldPos, text, cls = '') {
     this.v.copy(worldPos).project(this.game.camera);
     if (this.v.z > 1) return;
     const el = document.createElement('div');
-    el.className = 'floater';
+    el.className = `floater ${cls}`;
     el.textContent = text;
     el.style.left = `${((this.v.x + 1) / 2) * window.innerWidth}px`;
     el.style.top = `${((1 - this.v.y) / 2) * window.innerHeight}px`;
     $('floaters').appendChild(el);
-    setTimeout(() => el.remove(), 1300);
+    setTimeout(() => el.remove(), cls === 'speech' ? 2000 : 1300);
   }
 
   // ---------------------------------------------------------- per-frame

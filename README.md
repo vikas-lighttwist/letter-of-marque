@@ -21,7 +21,7 @@ Works with a trackpad, mouse, or touchscreen:
 - **Fire** — the `🔥 FIRE` button (or `Space`) lets fly both broadsides. It glows when guns bear.
 - **Board** — the green `BOARD` button appears when a weakened enemy is alongside (or `F`).
 - **Fleet** — tap a ship in the fleet panel to command her (or `C`); set the others to ⚑ follow or ⚔ hunt on their own.
-- **Islands** — slow down near shore, `⚓ Drop Anchor`, then `🚶 Go Ashore`: row in and explore in first person.
+- **Islands** — slow down near shore, `⚓ Drop Anchor`, then `🚶 Go Ashore`: row in and explore in third person. Tap the captain's parrot — trust us.
 - **Port** — the gold ⚓ island on the minimap is a safe harbor; walk up to the market house to buy cannon, crew, repairs.
 - **The edge** — sail off the chart and you appear on the far side.
 - **Zoom** — scroll / pinch, down to deck level.

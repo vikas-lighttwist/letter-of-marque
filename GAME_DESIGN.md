@@ -289,10 +289,13 @@ Added from the first family playtest:
 - **Round world** — sail off the edge of the chart and you emerge on the
   opposite side, camera gliding through the seam. No walls, no borders.
 - **Going ashore in person** — while anchored, tap **🚶 Go Ashore**: your
-  red-coated captain and two hands row in on a little jolly boat (chase-camera
-  cinematic), beach the boat, and then you walk the island in **first person**
+  captain and two hands row in on a little jolly boat (chase-camera
+  cinematic), beach the boat, and then you walk the island in **third person**
   — hold the pointer to walk toward it (or W/A/S/D), climb the hills for the
   view. **⛵ Return to Ship** rows you back.
+- **The captain himself** — red coat, black tricorn with a gold band and
+  feather, and a **parrot on his shoulder**. Tap the parrot: it squawks and
+  cries *"Pieces of eight!"* in a parchment speech bubble.
 - **Walk into the market** — at the port town the middle house hangs a gold
   sign and stacks barrels out front; walk up to its door and **🛒 Enter the
   Market** opens the shop. Buildings have collision — no ghosting through

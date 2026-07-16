@@ -125,4 +125,22 @@ export class Sound {
     this.blip(220, 0, 0.5, 0.3, 'triangle');
     this.blip(147, 0.4, 0.9, 0.3, 'triangle');
   }
+
+  // harsh two-note parrot screech
+  squawk() {
+    if (!this.ready()) return;
+    const t0 = this.ctx.currentTime;
+    for (const [start, f0, f1, dur] of [[0, 1500, 750, 0.16], [0.15, 1900, 950, 0.2]]) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f0, t0 + start);
+      osc.frequency.exponentialRampToValueAtTime(f1, t0 + start + dur);
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.22, t0 + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + start + dur);
+      osc.connect(gain).connect(this.master);
+      osc.start(t0 + start);
+      osc.stop(t0 + start + dur + 0.02);
+    }
+  }
 }
