@@ -304,6 +304,15 @@ tavern with games, a visible captain"):
   and a chest rises with 400–900 gold.
 - **Wildlife** — seagulls wheel over every island; dolphin pods leap across your
   bow with splashes and chirps.
+- **A walk-in tavern** — the door is real: step through it and the captain is
+  *inside* The Thirsty Parrot — bar and bottle shelf, a barkeep, pirates
+  swaying over their mugs at the tables, a fireplace, and One-Eyed Meg
+  (purple coat, eye patch, wide black hat) at her corner table with dice on
+  it. Walk up to the barkeep to order, to Meg to gamble, to the wall board
+  for bounties; the door leads back to the beach.
+- **A merchant at the market** — the shop is now an awning stall with goods
+  on the counter (coin pile, a small cannon, cloth bolts, barrels) and a
+  straw-hatted merchant behind it; trade opens when you walk up to him.
 - **Governor's Bounty Board** — one bounty at a time, posted at the tavern:
   sink or capture specific classes, or dig up a treasure. Progress is tracked
   live under the wind dial; the Governor pays on completion. Gives every

@@ -99,21 +99,79 @@ function createPortTown(r) {
     g.add(house);
     obstacles.push({ x: house.position.x, z: house.position.z, r: w * 0.8 });
 
-    // the middle house is the market: hanging sign + barrels out front
+    // the middle house is the market: the merchant's stall stands out front
     if (i === 2) {
-      shopLocal = { x: house.position.x, z: house.position.z };
+      const stall = new THREE.Group();
+      // counter, posts, striped awning
+      const counter = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.1, 1.5), toonMat(0x8a5a33));
+      counter.position.y = 0.55;
+      stall.add(counter);
+      const postGeo = new THREE.CylinderGeometry(0.09, 0.11, 3.1, 5);
+      for (const [px, pz] of [[-2.1, -0.9], [2.1, -0.9], [-2.1, 1.1], [2.1, 1.1]]) {
+        const post = new THREE.Mesh(postGeo, toonMat(0x6b4a2a));
+        post.position.set(px, 1.55, pz);
+        stall.add(post);
+      }
+      const awning = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.14, 2.9), toonMat(0xb0533a));
+      awning.position.set(0, 3.15, 0.1);
+      awning.rotation.x = 0.14;
+      stall.add(awning);
+      // goods on the counter: coin pile, a little cannon, cloth bolt
+      const coins = new THREE.Mesh(new THREE.IcosahedronGeometry(0.28, 0), toonMat(0xf2c14e));
+      coins.position.set(-1.4, 1.28, 0.1);
+      stall.add(coins);
+      const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 1.2, 6), toonMat(0x24211e));
+      gun.rotation.z = Math.PI / 2;
+      gun.position.set(0.2, 1.3, 0.1);
+      stall.add(gun);
+      const cloth = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.1, 7), toonMat(0x3a6e8a));
+      cloth.rotation.z = Math.PI / 2;
+      cloth.position.set(1.6, 1.3, 0);
+      stall.add(cloth);
+      // barrels and a crate beside the stall
+      const barrelGeo = new THREE.CylinderGeometry(0.55, 0.55, 1.1, 8);
+      for (const off of [[-3.1, 0.4], [3.1, -0.3]]) {
+        const barrel = new THREE.Mesh(barrelGeo, toonMat(0x9a6b35));
+        barrel.position.set(off[0], 0.55, off[1]);
+        stall.add(barrel);
+      }
+      const crate = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), toonMat(0xb98d5a));
+      crate.position.set(3.1, 1.55, -0.3);
+      crate.rotation.y = 0.5;
+      stall.add(crate);
+      // the merchant himself, behind the counter in a straw hat
+      const merchant = new THREE.Group();
+      const mBody = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.31, 0.72, 6), toonMat(0x3a6e46));
+      mBody.position.y = 0.36;
+      merchant.add(mBody);
+      const mHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 7, 6), toonMat(0xd8a377));
+      mHead.position.y = 0.9;
+      merchant.add(mHead);
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.44, 0.07, 10), toonMat(0xd9c27a));
+      straw.position.y = 1.04;
+      merchant.add(straw);
+      const strawTop = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.16, 8), toonMat(0xd9c27a));
+      strawTop.position.y = 1.12;
+      merchant.add(strawTop);
+      merchant.position.set(0, 0, -1.6);
+      stall.add(merchant);
+
+      // stall faces outward, in front of the house toward the beach
+      const outward = Math.atan2(house.position.x, house.position.z);
+      const sx = house.position.x + Math.sin(outward) * 5.5;
+      const sz = house.position.z + Math.cos(outward) * 5.5;
+      stall.position.set(sx, 2.2, sz);
+      stall.rotation.y = outward;
+      g.add(stall);
+      obstacles.push({ x: sx, z: sz, r: 3.2 });
+      shopLocal = { x: sx, z: sz };
+
       const sign = new THREE.Mesh(
         new THREE.BoxGeometry(2.6, 1.3, 0.18),
         new THREE.MeshBasicMaterial({ color: 0xf2c14e })
       );
       sign.position.set(house.position.x, 2.2 + h + 1.2, house.position.z);
       g.add(sign);
-      const barrelGeo = new THREE.CylinderGeometry(0.55, 0.55, 1.1, 8);
-      for (const off of [[2.2, 0.8], [2.8, -0.6]]) {
-        const barrel = new THREE.Mesh(barrelGeo, toonMat(0x9a6b35));
-        barrel.position.set(house.position.x + off[0], 2.75, house.position.z + off[1]);
-        g.add(barrel);
-      }
     }
   }
   g.userData.shop = shopLocal;

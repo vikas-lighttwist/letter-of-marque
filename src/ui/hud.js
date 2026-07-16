@@ -99,9 +99,19 @@ export class HUD {
     });
   }
 
-  showTavern() {
+  showGalley() {
     this.tavern ??= new Tavern(this.game, this);
-    this.tavern.show();
+    this.tavern.show('galley');
+  }
+
+  showDice() {
+    this.tavern ??= new Tavern(this.game, this);
+    this.tavern.show('dice');
+  }
+
+  showBounty() {
+    this.tavern ??= new Tavern(this.game, this);
+    this.tavern.show('board');
   }
 
   refreshMarket() {
@@ -208,14 +218,22 @@ export class HUD {
     const ab = $('anchor-btn');
     const mb = $('market-btn');
     if (ashore) {
-      // ashore: anchor slot = return to ship, market slot = nearest point of interest
+      // ashore: anchor slot = leave/return, market slot = nearest point of interest
       if (g.ashore.phase === 'walk') {
         ab.classList.remove('hidden');
-        ab.textContent = '⛵ Return to Ship';
         let poi = null;
-        if (g.nearDigSpot()) poi = '⛏ DIG HERE!';
-        else if (g.nearTavern()) poi = '🍗 Enter the Tavern';
-        else if (g.ashore.nearShop()) poi = '🛒 Enter the Market';
+        if (g.ashore.room === 'tavern') {
+          ab.textContent = '🚪 Leave the Tavern';
+          const t = g.tavernPOI();
+          if (t === 'galley') poi = '🍗 Order from the Barkeep';
+          else if (t === 'dice') poi = '🎲 Dice with One-Eyed Meg';
+          else if (t === 'board') poi = '☠ Read the Bounty Board';
+        } else {
+          ab.textContent = '⛵ Return to Ship';
+          if (g.nearDigSpot()) poi = '⛏ DIG HERE!';
+          else if (g.nearTavern()) poi = '🍺 Enter the Tavern';
+          else if (g.ashore.nearShop()) poi = '🛒 Trade with the Merchant';
+        }
         mb.classList.toggle('hidden', !poi);
         if (poi) mb.textContent = poi;
       } else {

@@ -8,6 +8,7 @@ import { HUD } from './ui/hud.js';
 import { Labels } from './ui/labels.js';
 import { Minimap } from './ui/minimap.js';
 import { AshoreMode, islandGroundY } from './ashore/ashore.js';
+import { buildTavernInterior } from './ashore/tavernInterior.js';
 import { makeCaptain } from './ships/captain.js';
 import { waveHeight } from './world/waves.js';
 import { toonMat } from './core/toon.js';
@@ -112,6 +113,7 @@ export class Game {
     this.labels = new Labels(this);
     this.minimap = new Minimap(this);
     this.ashore = new AshoreMode(this);
+    this.tavernInterior = buildTavernInterior(scene);
 
     // the captain stands the quarterdeck of whatever ship you command
     this.deckCap = makeCaptain();
@@ -531,10 +533,15 @@ export class Game {
     this.ashore.begin(isl);
   }
 
-  // the anchor-slot button: weigh/drop anchor at sea, return-to-ship when ashore
+  // the anchor-slot button: weigh/drop anchor at sea, return-to-ship when
+  // ashore, and "leave the tavern" while inside it
   anchorAction() {
-    if (this.ashore.active) this.ashore.requestReturn();
-    else this.toggleAnchor();
+    if (this.ashore.active) {
+      if (this.ashore.room === 'tavern') this.ashore.exitTavern();
+      else this.ashore.requestReturn();
+    } else {
+      this.toggleAnchor();
+    }
   }
 
   nearTavern() {
@@ -544,18 +551,35 @@ export class Game {
     return Math.hypot(c.x - tv.x, c.z - tv.z) < 11;
   }
 
+  // who's within chatting range inside the tavern?
+  tavernPOI() {
+    if (this.ashore.room !== 'tavern') return null;
+    const inn = this.tavernInterior;
+    const c = this.ashore.captain.pos;
+    const near = (p, r) => Math.hypot(c.x - p.x, c.z - p.z) < r;
+    if (near(inn.meg, 5)) return 'dice';
+    if (near(inn.barkeep, 5)) return 'galley';
+    if (near(inn.board, 4.5)) return 'board';
+    return null;
+  }
+
   // the point-of-interest button: go ashore when anchored; ashore it becomes
-  // dig / tavern / market depending on where the captain stands
+  // dig / tavern door / merchant, and inside the tavern: barkeep / Meg / board
   poiAction() {
     if (!this.ashore.active) {
       this.goAshore();
-    } else if (this.nearDigSpot()) {
-      this.digTreasure();
-    } else if (this.nearTavern()) {
-      this.hud.showTavern();
-    } else if (this.ashore.nearShop()) {
-      this.hud.showMarket();
+      return;
     }
+    if (this.ashore.room === 'tavern') {
+      const poi = this.tavernPOI();
+      if (poi === 'galley') this.hud.showGalley();
+      else if (poi === 'dice') this.hud.showDice();
+      else if (poi === 'board') this.hud.showBounty();
+      return;
+    }
+    if (this.nearDigSpot()) this.digTreasure();
+    else if (this.nearTavern()) this.ashore.enterTavern();
+    else if (this.ashore.nearShop()) this.hud.showMarket();
   }
 
   closeMarket() {

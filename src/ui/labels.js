@@ -60,6 +60,20 @@ export class Labels {
     const seen = new Set();
     const needArrows = [];
 
+    // no sea labels or arrows while inside the tavern
+    if (game.ashore?.room === 'tavern') {
+      for (const [id, e] of this.entries) {
+        e.el.remove();
+        this.entries.delete(id);
+      }
+      for (const [l, el] of this.lootTags) {
+        el.remove();
+        this.lootTags.delete(l);
+      }
+      while (this.arrows.length) this.arrows.pop().remove();
+      return;
+    }
+
     for (const ship of game.ships) {
       if (ship.dead) continue;
       const anchor = ship.labelAnchor();

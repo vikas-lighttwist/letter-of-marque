@@ -61,18 +61,29 @@ export class Tavern {
     this.game = game;
   }
 
-  show() {
+  show(section = 'galley') {
+    this.section = section;
     $('overlay').classList.remove('hidden');
-    this.renderRoom();
+    if (section === 'galley') this.renderGalley();
+    else if (section === 'dice') this.renderDiceLobby();
+    else this.renderBoard();
   }
 
   close() {
     $('overlay').classList.add('hidden');
   }
 
-  // ------------------------------------------------------------ main room
+  closeBtn(label = '🚪 Step Away') {
+    return `<button class="big-btn" id="tav-close">${label}</button>`;
+  }
 
-  renderRoom() {
+  wireClose() {
+    $('tav-close')?.addEventListener('click', () => this.close());
+  }
+
+  // ------------------------------------------------------------ the barkeep
+
+  renderGalley() {
     const g = this.game;
     const card = $('overlay-card');
     const galley = MENU.map(
@@ -86,31 +97,11 @@ export class Tavern {
       </div>`
     ).join('');
 
-    let bountyHTML;
-    if (g.bounty) {
-      bountyHTML = `<div class="bounty-line">Current bounty: <b>${g.bounty.desc}</b> — ${g.bounty.have}/${g.bounty.need}</div>`;
-    } else {
-      const offer = g.generateBountyOffer();
-      bountyHTML = `<div class="bounty-line"><b>${offer.desc}</b> — pays <b>${offer.reward} ⛁</b>
-        <button id="take-bounty">Take it</button></div>`;
-    }
-
     card.innerHTML = `
-      <h1>🦜 The Thirsty Parrot</h1>
-      <h2>Hot food, cold fizz, and honest dice — mostly. &nbsp;⛁ <b id="tav-gold">${g.gold}</b></h2>
+      <h1>🍗 The Galley</h1>
+      <h2>"What'll it be, Captain?" &nbsp;⛁ <b id="tav-gold">${g.gold}</b></h2>
       <div id="shop-list">${galley}</div>
-      <div class="dice-head">— Governor's Bounty Board —</div>
-      ${bountyHTML}
-      <div class="dice-head">— One-Eyed Meg waits at the corner table —</div>
-      <p class="dice-rules">Ship, Captain &amp; Crew: three rolls to find a ⚅ ship, ⚄ captain and ⚃ crew,
-      in that order. The two dice left over are your cargo — highest cargo takes the pot.</p>
-      <div class="stake-row">
-        <button class="stake" data-stake="25">25 ⛁</button>
-        <button class="stake" data-stake="100">100 ⛁</button>
-        <button class="stake" data-stake="500">500 ⛁</button>
-        <button id="ship-bet">⛵ Bet a Ship</button>
-      </div>
-      <button class="big-btn" id="tav-close">🚶 Back Outside</button>`;
+      ${this.closeBtn()}`;
 
     card.querySelectorAll('.shop-buy').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -120,6 +111,54 @@ export class Tavern {
         }
       });
     });
+    this.wireClose();
+    this.refreshGalley();
+  }
+
+  // ------------------------------------------------------------ the bounty board
+
+  renderBoard() {
+    const g = this.game;
+    const card = $('overlay-card');
+    let bountyHTML;
+    if (g.bounty) {
+      bountyHTML = `<div class="bounty-line">Current bounty: <b>${g.bounty.desc}</b> — ${g.bounty.have}/${g.bounty.need}</div>
+        <p class="dice-rules">Finish the job before taking another.</p>`;
+    } else {
+      const offer = g.generateBountyOffer();
+      bountyHTML = `<div class="bounty-line"><b>${offer.desc}</b> — pays <b>${offer.reward} ⛁</b>
+        <button id="take-bounty">Take it</button></div>`;
+    }
+    card.innerHTML = `
+      <h1>☠ Governor's Bounty Board</h1>
+      <h2>Parchment and nails — the Crown's dirty work, fairly paid.</h2>
+      ${bountyHTML}
+      ${this.closeBtn()}`;
+    $('take-bounty')?.addEventListener('click', () => {
+      this.game.acceptBounty();
+      this.renderBoard();
+    });
+    this.wireClose();
+  }
+
+  // ------------------------------------------------------------ Meg's table
+
+  renderDiceLobby() {
+    const g = this.game;
+    const card = $('overlay-card');
+    card.innerHTML = `
+      <h1>🎲 One-Eyed Meg</h1>
+      <h2>"Sit down, Captain. Dice don't bite — much." &nbsp;⛁ <b id="tav-gold">${g.gold}</b></h2>
+      <p class="dice-rules">Ship, Captain &amp; Crew: three rolls to find a ⚅ ship, ⚄ captain and ⚃ crew,
+      in that order. The two dice left over are your cargo — highest cargo takes the pot.</p>
+      <div class="stake-row">
+        <button class="stake" data-stake="25">25 ⛁</button>
+        <button class="stake" data-stake="100">100 ⛁</button>
+        <button class="stake" data-stake="500">500 ⛁</button>
+        <button id="ship-bet">⛵ Bet a Ship</button>
+      </div>
+      ${this.closeBtn('🚪 Not Today, Meg')}`;
+
     card.querySelectorAll('.stake').forEach((btn) => {
       btn.addEventListener('click', () => {
         const stake = Number(btn.dataset.stake);
@@ -131,12 +170,9 @@ export class Tavern {
       });
     });
     $('ship-bet').addEventListener('click', () => this.renderShipPick());
-    $('tav-close').addEventListener('click', () => this.close());
-    $('take-bounty')?.addEventListener('click', () => {
-      this.game.acceptBounty();
-      this.renderRoom();
-    });
-    this.refreshGalley();
+    const shipBet = $('ship-bet');
+    if (shipBet) shipBet.disabled = g.fleet.length < 2;
+    this.wireClose();
   }
 
   refreshGalley() {
@@ -178,7 +214,7 @@ export class Tavern {
         this.beginMatch();
       });
     });
-    $('pick-back').addEventListener('click', () => this.renderRoom());
+    $('pick-back').addEventListener('click', () => this.renderDiceLobby());
   }
 
   // ------------------------------------------------------------ the match
@@ -250,7 +286,7 @@ export class Tavern {
     $('again-btn')?.addEventListener('click', () => this.playAgain());
     $('room-btn')?.addEventListener('click', () => {
       this.megLine = null;
-      this.renderRoom();
+      this.renderDiceLobby();
     });
   }
 
@@ -335,7 +371,7 @@ export class Tavern {
       return;
     }
     if (g.gold < this.stake) {
-      this.renderRoom();
+      this.renderDiceLobby();
       return;
     }
     g.gold -= this.stake;

@@ -97,6 +97,7 @@ export class AshoreMode {
     this.island = island;
     this.active = true;
     this.phase = 'row-in';
+    this.room = 'island';
     g.state = 'ashore';
 
     const toShip = Math.atan2(f.pos.x - island.x, f.pos.z - island.z);
@@ -208,30 +209,53 @@ export class AshoreMode {
     c.pos.x += moveX * WALK_SPEED * dt;
     c.pos.z += moveZ * WALK_SPEED * dt;
 
-    // stay on the island
-    const dx = c.pos.x - isl.x;
-    const dz = c.pos.z - isl.z;
-    const dr = Math.hypot(dx, dz);
-    const maxR = isl.rRaw * 1.02;
-    if (dr > maxR) {
-      c.pos.x = isl.x + (dx / dr) * maxR;
-      c.pos.z = isl.z + (dz / dr) * maxR;
-    }
-
-    // don't walk through the town buildings
-    if (isl.port && g.env.port?.obstacles) {
-      for (const o of g.env.port.obstacles) {
+    if (this.room === 'tavern') {
+      // stay inside the room, off the furniture
+      const inn = g.tavernInterior;
+      c.pos.x = Math.min(inn.bounds.x1, Math.max(inn.bounds.x0, c.pos.x));
+      c.pos.z = Math.min(inn.bounds.z1, Math.max(inn.bounds.z0, c.pos.z));
+      for (const o of inn.obstacles) {
         const ox = c.pos.x - o.x;
         const oz = c.pos.z - o.z;
         const od = Math.hypot(ox, oz);
-        const minD = o.r + 0.6;
+        const minD = o.r + 0.5;
         if (od < minD && od > 0.001) {
           c.pos.x = o.x + (ox / od) * minD;
           c.pos.z = o.z + (oz / od) * minD;
         }
       }
+      c.pos.y = inn.floorY;
+
+      // the regulars sway over their mugs
+      for (let i = 0; i < inn.patrons.length; i++) {
+        inn.patrons[i].rotation.z = Math.sin(t * 1.6 + i * 1.3) * 0.05;
+      }
+    } else {
+      // stay on the island
+      const dx = c.pos.x - isl.x;
+      const dz = c.pos.z - isl.z;
+      const dr = Math.hypot(dx, dz);
+      const maxR = isl.rRaw * 1.02;
+      if (dr > maxR) {
+        c.pos.x = isl.x + (dx / dr) * maxR;
+        c.pos.z = isl.z + (dz / dr) * maxR;
+      }
+
+      // don't walk through the town buildings
+      if (isl.port && g.env.port?.obstacles) {
+        for (const o of g.env.port.obstacles) {
+          const ox = c.pos.x - o.x;
+          const oz = c.pos.z - o.z;
+          const od = Math.hypot(ox, oz);
+          const minD = o.r + 0.6;
+          if (od < minD && od > 0.001) {
+            c.pos.x = o.x + (ox / od) * minD;
+            c.pos.z = o.z + (oz / od) * minD;
+          }
+        }
+      }
+      c.pos.y = this.groundY(c.pos.x, c.pos.z);
     }
-    c.pos.y = this.groundY(c.pos.x, c.pos.z);
 
     // captain mesh: position, facing, and a jaunty walk bob
     const m = this.captainMesh;
@@ -244,9 +268,13 @@ export class AshoreMode {
     // the parrot bobs along
     this.parrot.rotation.z = Math.sin(t * 3.1) * 0.08;
 
-    // third-person camera, over the shoulder
+    // third-person camera, over the shoulder (tighter indoors)
+    const inside = this.room === 'tavern';
     const back = new THREE.Vector3(Math.sin(c.yaw), 0, Math.cos(c.yaw));
-    const wantPos = c.pos.clone().addScaledVector(back, -5.2).add(new THREE.Vector3(0, 3.0, 0));
+    const wantPos = c.pos
+      .clone()
+      .addScaledVector(back, inside ? -3.8 : -5.2)
+      .add(new THREE.Vector3(0, inside ? 2.2 : 3.0, 0));
     const wantLook = c.pos.clone().addScaledVector(back, 2.5).add(new THREE.Vector3(0, 1.3, 0));
     const k = 1 - Math.exp(-dt * 6);
     this.camPos.lerp(wantPos, k);
@@ -271,8 +299,37 @@ export class AshoreMode {
     return f ? f.pos : this.beachPoint;
   }
 
+  // step through the tavern door into the interior room
+  enterTavern() {
+    const inn = this.game.tavernInterior;
+    if (!inn || this.room === 'tavern' || this.phase !== 'walk') return;
+    this.savedIslandPos = this.captain.pos.clone();
+    this.savedIslandYaw = this.captain.yaw;
+    this.captain.pos.copy(inn.spawn);
+    this.captain.yaw = Math.PI; // face into the room (-z)
+    this.room = 'tavern';
+    this.game.input.seaPlane.constant = -inn.floorY; // pointer-walk on the tavern floor
+    // snap the camera behind him so we don't lerp through the sea floor
+    const back = new THREE.Vector3(Math.sin(this.captain.yaw), 0, Math.cos(this.captain.yaw));
+    this.camPos.copy(this.captain.pos).addScaledVector(back, -4).add(new THREE.Vector3(0, 2.4, 0));
+    this.camLook.copy(this.captain.pos).add(new THREE.Vector3(0, 1.2, 0));
+    this.game.hud.banner('🍺 The Thirsty Parrot — talk to the barkeep, Meg, or the board');
+  }
+
+  exitTavern() {
+    if (this.room !== 'tavern') return;
+    this.room = 'island';
+    this.game.input.seaPlane.constant = 0;
+    this.captain.pos.copy(this.savedIslandPos);
+    this.captain.yaw = this.savedIslandYaw + Math.PI; // walk back out facing away
+    const back = new THREE.Vector3(Math.sin(this.captain.yaw), 0, Math.cos(this.captain.yaw));
+    this.camPos.copy(this.captain.pos).addScaledVector(back, -5).add(new THREE.Vector3(0, 3, 0));
+    this.camLook.copy(this.captain.pos).add(new THREE.Vector3(0, 1.3, 0));
+  }
+
   requestReturn() {
     if (this.phase !== 'walk') return;
+    if (this.room === 'tavern') this.exitTavern();
     this.phase = 'row-out';
     // back into the boat
     this.game.scene.remove(this.captainMesh);
@@ -282,6 +339,8 @@ export class AshoreMode {
   }
 
   finish() {
+    this.room = 'island';
+    this.game.input.seaPlane.constant = 0;
     if (this.boat) this.game.scene.remove(this.boat);
     if (this.captainMesh?.parent === this.game.scene) this.game.scene.remove(this.captainMesh);
     if (this._clickables) {
