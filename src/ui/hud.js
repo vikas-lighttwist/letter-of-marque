@@ -274,6 +274,15 @@ export class HUD {
       fill.style.width = `${(s.hp / s.maxHp) * 100}%`;
     }
 
+    // bounty tracker
+    const bt = $('bounty-tracker');
+    if (g.bounty) {
+      bt.classList.remove('hidden');
+      bt.textContent = `☠ ${g.bounty.desc} — ${g.bounty.have}/${g.bounty.need}`;
+    } else {
+      bt.classList.add('hidden');
+    }
+
     // steering / walking ring
     const ring = $('steer-ring');
     const sp = g.input.steerScreen;

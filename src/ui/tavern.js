@@ -86,10 +86,21 @@ export class Tavern {
       </div>`
     ).join('');
 
+    let bountyHTML;
+    if (g.bounty) {
+      bountyHTML = `<div class="bounty-line">Current bounty: <b>${g.bounty.desc}</b> — ${g.bounty.have}/${g.bounty.need}</div>`;
+    } else {
+      const offer = g.generateBountyOffer();
+      bountyHTML = `<div class="bounty-line"><b>${offer.desc}</b> — pays <b>${offer.reward} ⛁</b>
+        <button id="take-bounty">Take it</button></div>`;
+    }
+
     card.innerHTML = `
       <h1>🦜 The Thirsty Parrot</h1>
       <h2>Hot food, cold fizz, and honest dice — mostly. &nbsp;⛁ <b id="tav-gold">${g.gold}</b></h2>
       <div id="shop-list">${galley}</div>
+      <div class="dice-head">— Governor's Bounty Board —</div>
+      ${bountyHTML}
       <div class="dice-head">— One-Eyed Meg waits at the corner table —</div>
       <p class="dice-rules">Ship, Captain &amp; Crew: three rolls to find a ⚅ ship, ⚄ captain and ⚃ crew,
       in that order. The two dice left over are your cargo — highest cargo takes the pot.</p>
@@ -121,6 +132,10 @@ export class Tavern {
     });
     $('ship-bet').addEventListener('click', () => this.renderShipPick());
     $('tav-close').addEventListener('click', () => this.close());
+    $('take-bounty')?.addEventListener('click', () => {
+      this.game.acceptBounty();
+      this.renderRoom();
+    });
     this.refreshGalley();
   }
 

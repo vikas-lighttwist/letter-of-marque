@@ -304,6 +304,10 @@ tavern with games, a visible captain"):
   and a chest rises with 400–900 gold.
 - **Wildlife** — seagulls wheel over every island; dolphin pods leap across your
   bow with splashes and chirps.
+- **Governor's Bounty Board** — one bounty at a time, posted at the tavern:
+  sink or capture specific classes, or dig up a treasure. Progress is tracked
+  live under the wind dial; the Governor pays on completion. Gives every
+  session a "what's next".
 - **Sharper combat feel** — camera shake when your flagship is hit, hulls under
   40 % health wallow at ¾ speed, and once you hold 800+ gold, Spanish hunter
   frigates (with fattened pay chests) spawn on your trail every ~5 minutes.

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Ship } from './ships/ship.js';
-import { FACTIONS } from './ships/factory.js';
+import { FACTIONS, SHIP_CLASSES } from './ships/factory.js';
 import { Effects } from './combat/effects.js';
 import { updateSpanishAI, updateFleetAI } from './ai/ai.js';
 import { CameraRig } from './core/cameraRig.js';
@@ -86,6 +86,8 @@ export class Game {
     this.loot = [];
     this.boardings = [];
     this.treasure = null;
+    this.bounty = null; // active Governor's bounty
+    this.bountyOffer = null; // posted at the tavern
     this.shore = null; // {island, figures} while anchored
     this.anchorT = 0;
     this.spawnTimer = 10;
@@ -381,6 +383,7 @@ export class Game {
     d.buildCrew();
     this.fleet.push(d);
     this.captures++;
+    this.bountyProgress('capture', d.classKey);
     this.sound.fanfare();
     const by = a === this.flagship ? '' : ` by ${a.name}`;
     this.hud.banner(`⚑ ${d.name} taken${by} — she sails for England!`);
@@ -640,6 +643,55 @@ export class Game {
       this.addGold(amount, new THREE.Vector3(tr.x, y + 2.5, tr.z));
       this.sound.fanfare();
     }, 600);
+    this.bountyProgress('dig');
+  }
+
+  // ---------------------------------------------------------- bounties
+
+  generateBountyOffer() {
+    if (this.bountyOffer) return this.bountyOffer;
+    if (Math.random() < 0.15) {
+      this.bountyOffer = { type: 'dig', desc: 'Dig up a buried treasure', need: 1, have: 0, reward: 250 };
+      return this.bountyOffer;
+    }
+    const pool = this.gold < 500 ? ['sloop', 'brigantine']
+      : this.gold < 2000 ? ['brigantine', 'frigate']
+      : ['frigate', 'galleon'];
+    const classKey = pool[Math.floor(Math.random() * pool.length)];
+    const type = Math.random() < 0.55 ? 'sink' : 'capture';
+    const need = type === 'sink' ? 2 : 1;
+    const base = { sloop: 60, brigantine: 110, frigate: 200, galleon: 340 }[classKey];
+    const reward = Math.round(base * need * (type === 'capture' ? 1.8 : 1));
+    const label = SHIP_CLASSES[classKey].label;
+    this.bountyOffer = {
+      type, classKey, need, have: 0, reward,
+      desc: `${type === 'sink' ? 'Sink' : 'Capture'} ${need} Spanish ${label}${need > 1 ? 's' : ''}`,
+    };
+    return this.bountyOffer;
+  }
+
+  acceptBounty() {
+    if (!this.bountyOffer || this.bounty) return;
+    this.bounty = this.bountyOffer;
+    this.bountyOffer = null;
+    this.hud.banner(`☠ Bounty taken: ${this.bounty.desc}`);
+  }
+
+  bountyProgress(type, classKey) {
+    const b = this.bounty;
+    if (!b || b.type !== type) return;
+    if (b.classKey && b.classKey !== classKey) return;
+    b.have++;
+    if (b.have >= b.need) {
+      this.bounty = null;
+      this.hud.banner(`☑ Bounty complete — the Governor pays ${b.reward} ⛁!`, 5000);
+      this.sound.fanfare();
+      if (this.flagship) {
+        this.addGold(b.reward, this.flagship.pos.clone().add(new THREE.Vector3(0, 14, 0)));
+      } else {
+        this.gold += b.reward;
+      }
+    }
   }
 
   megShipClass() {
@@ -726,6 +778,7 @@ export class Game {
     if (ship.faction === 'spain') {
       this.sinkings++;
       if (ship.gold > 0) this.spawnLoot(ship);
+      this.bountyProgress('sink', ship.classKey);
     } else {
       const i = this.fleet.indexOf(ship);
       if (i >= 0) this.fleet.splice(i, 1);
