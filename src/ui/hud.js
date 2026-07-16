@@ -18,7 +18,7 @@ export class HUD {
     $('anchor-btn').addEventListener('click', () => game.anchorAction());
     $('market-btn').addEventListener('click', () => game.marketAction());
     $('mute-btn').addEventListener('click', () => {
-      game.sound.muted = !game.sound.muted;
+      game.sound.setMuted(!game.sound.muted);
       $('mute-btn').textContent = game.sound.muted ? '🔇' : '🔊';
     });
   }

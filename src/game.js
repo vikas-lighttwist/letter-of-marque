@@ -8,6 +8,7 @@ import { HUD } from './ui/hud.js';
 import { Labels } from './ui/labels.js';
 import { Minimap } from './ui/minimap.js';
 import { AshoreMode } from './ashore/ashore.js';
+import { makeCaptain } from './ships/captain.js';
 import { waveHeight } from './world/waves.js';
 import { toonMat } from './core/toon.js';
 
@@ -66,6 +67,18 @@ export class Game {
 
     this.wind = { angle: rand(0, Math.PI * 2), seed: rand(0, 10) };
     this.upgrades = { dmg: 1, range: 1, double: false, oak: false, owned: new Set() };
+    this.buffs = { speedUntil: 0, repairUntil: 0 };
+
+    // shared tap targets (captain, parrot, …)
+    this.clickables = [];
+    this.tapCooldown = 0;
+    this._ray = new THREE.Raycaster();
+    window.addEventListener('pointerdown', (e) => this.handleTap(e));
+
+    // ambience pacing
+    this.gullT = 4;
+    this.creakT = 6;
+    this.hunterT = 240;
 
     this.ships = [];
     this.fleet = [];
@@ -95,6 +108,75 @@ export class Game {
     this.labels = new Labels(this);
     this.minimap = new Minimap(this);
     this.ashore = new AshoreMode(this);
+
+    // the captain stands the quarterdeck of whatever ship you command
+    this.deckCap = makeCaptain();
+    this.clickables.push(
+      { obj: this.deckCap.parrot, fn: () => this.parrotTapped(this.deckCap.parrot) },
+      { obj: this.deckCap.group, fn: () => this.captainTapped(this.deckCap.group) }
+    );
+  }
+
+  // ------------------------------------------------------------ taps
+
+  handleTap(e) {
+    if (this.tapCooldown > 0 || !this.clickables.length) return;
+    const ndc = new THREE.Vector2(
+      (e.clientX / window.innerWidth) * 2 - 1,
+      -(e.clientY / window.innerHeight) * 2 + 1
+    );
+    this._ray.setFromCamera(ndc, this.camera);
+    let best = null;
+    for (const c of this.clickables) {
+      const hits = this._ray.intersectObject(c.obj, true);
+      if (hits.length && (!best || hits[0].distance < best.d)) {
+        best = { c, d: hits[0].distance };
+      }
+    }
+    if (best) {
+      this.tapCooldown = 1.4;
+      best.c.fn();
+    }
+  }
+
+  parrotTapped(parrotObj) {
+    this.sound.parrotClip();
+  }
+
+  captainTapped(capObj) {
+    const LINES = [
+      'Steady as she goes!',
+      'All hands on deck!',
+      'Fair winds today, mate.',
+      'The Main is ours for the taking!',
+      'Keep a weather eye on the horizon.',
+      'A fine day for plunder!',
+      "Mind the gulls — they'll have yer biscuit.",
+    ];
+    const line = LINES[Math.floor(Math.random() * LINES.length)];
+    const p = new THREE.Vector3();
+    capObj.getWorldPosition(p);
+    p.y += 2.2;
+    this.hud.floaterAt(p, line, 'speech');
+    if (this.sound.ready()) this.sound.blip(240, 0, 0.12, 0.2, 'triangle');
+  }
+
+  updateDeckCaptain(dt, t) {
+    const f = this.flagship;
+    const cap = this.deckCap.group;
+    const show = f && !f.sinking && !this.ashore.active;
+    if (!show) {
+      if (cap.parent) cap.parent.remove(cap);
+      return;
+    }
+    const host = f.mesh.group;
+    if (cap.parent !== host) {
+      host.add(cap);
+      cap.position.set(0, f.mesh.deckY + 0.1, -f.def.len * 0.2);
+      cap.rotation.set(0, 0, 0);
+    }
+    cap.rotation.z = Math.sin(t * 1.7) * 0.03; // sea legs
+    this.deckCap.parrot.rotation.z = Math.sin(t * 3.1) * 0.08;
   }
 
   addShip(classKey, faction, x, z, heading) {
@@ -108,6 +190,7 @@ export class Game {
     this.startTime = this.elapsed;
     this.flagship.sailSetting = 2;
     this.sound.init();
+    this.sound.startAmbience();
   }
 
   // ------------------------------------------------------------ actions
@@ -263,6 +346,13 @@ export class Game {
         const pa = a.localToWorld(0, a.mesh.deckY + 0.6, rope.userData.za);
         const pb = d.localToWorld(0, d.mesh.deckY + 0.6, rope.userData.zb);
         rope.geometry.setFromPoints([pa, pb]);
+      }
+
+      // the ring of steel on steel
+      bd.clankT = (bd.clankT ?? 0.4) - dt;
+      if (bd.clankT <= 0) {
+        bd.clankT = 0.45 + Math.random() * 0.5;
+        this.sound.clank(d.pos);
       }
 
       if (bd.progress >= 1) this.completeCapture(bd);
@@ -639,6 +729,10 @@ export class Game {
     this.updateWakes(dt);
     this.effects.update(dt, t);
     this.updateSpawning(dt);
+    this.updateHunters(dt);
+    this.updateAmbientSounds(dt);
+    this.updateDeckCaptain(dt, t);
+    this.tapCooldown = Math.max(0, this.tapCooldown - dt);
 
     this.rig.zoom(this.input.consumeZoom());
 
@@ -666,6 +760,49 @@ export class Game {
       this.sound.fanfare();
       this.hud.banner('⚑ TERROR OF THE SPANISH MAIN ⚑<br><small>10,000 gold and a ship of the line — the Crown salutes you</small>', 8000);
     }
+  }
+
+  // seagull cries near land, rigging creaks under way
+  updateAmbientSounds(dt) {
+    const f = this.flagship;
+    if (!f || this.state === 'intro') return;
+    this.gullT -= dt;
+    if (this.gullT <= 0) {
+      this.gullT = 6 + Math.random() * 9;
+      const isl = this.env.islands.find(
+        (i) => Math.hypot(f.pos.x - i.x, f.pos.z - i.z) < i.r + 130
+      );
+      if (isl) this.sound.gull(new THREE.Vector3(isl.x, 20, isl.z));
+    }
+    this.creakT -= dt;
+    if (this.creakT <= 0) {
+      this.creakT = 4 + Math.random() * 6;
+      if (f.speed > 3 && !this.ashore.active) this.sound.creak(f.pos);
+    }
+  }
+
+  // once you're rich, Spain sends hunters
+  updateHunters(dt) {
+    if (this.state !== 'playing' || this.gold < 800 || !this.flagship) return;
+    this.hunterT -= dt;
+    if (this.hunterT > 0) return;
+    this.hunterT = 300;
+    const alive = this.ships.filter((s) => s.faction === 'spain' && !s.dead).length;
+    if (alive > 13) return;
+    const bearing = rand(0, Math.PI * 2);
+    for (const off of [-0.25, 0.25]) {
+      let x = this.flagship.pos.x + Math.sin(bearing + off) * 500;
+      let z = this.flagship.pos.z + Math.cos(bearing + off) * 500;
+      const r = Math.hypot(x, z);
+      if (r > 800) {
+        x *= 780 / r;
+        z *= 780 / r;
+      }
+      const h = this.addShip('frigate', 'spain', x, z, bearing + Math.PI);
+      h.gold = Math.round(h.gold * 1.5); // hunters carry the King's pay chest
+    }
+    this.hud.banner('⚠ Spanish hunters are on your trail!');
+    this.sound.knell();
   }
 
   // a ship crossed the world edge and reappeared on the far side —

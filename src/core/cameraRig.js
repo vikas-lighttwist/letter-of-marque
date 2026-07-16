@@ -6,6 +6,11 @@ export class CameraRig {
     this.dist = 34;
     this.pos = new THREE.Vector3(0, 20, -40);
     this.look = new THREE.Vector3();
+    this.shakeT = 0;
+  }
+
+  shake(amount) {
+    this.shakeT = Math.min(1, this.shakeT + amount);
   }
 
   zoom(delta) {
@@ -29,6 +34,13 @@ export class CameraRig {
     this.look.lerp(desiredLook, k);
 
     this.camera.position.copy(this.pos);
+    if (this.shakeT > 0) {
+      const s = this.shakeT * 0.55;
+      this.camera.position.x += (Math.random() - 0.5) * s;
+      this.camera.position.y += (Math.random() - 0.5) * s;
+      this.camera.position.z += (Math.random() - 0.5) * s;
+      this.shakeT = Math.max(0, this.shakeT - dt * 2.4);
+    }
     this.camera.lookAt(this.look);
   }
 }

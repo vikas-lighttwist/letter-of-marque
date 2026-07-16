@@ -126,6 +126,7 @@ export class Ship {
     if (this.sinking) return;
     this.hp -= amount;
     this.lastDamageT = this.game.elapsed;
+    if (this === this.game.flagship) this.game.rig.shake(0.35);
     if (attacker) this.lastAttacker = attacker;
     if (this.hp <= 0) {
       this.hp = 0;
@@ -173,7 +174,13 @@ export class Ship {
     const wind = this.game.wind;
     const windFactor = wind ? 1 + 0.35 * Math.cos(this.heading - wind.angle) : 1;
     const lock = this.boarding || this.anchored ? 0 : 1;
-    const targetSpeed = this.def.maxSpeed * (this.sailSetting / 3) * windFactor * lock;
+    let targetSpeed = this.def.maxSpeed * (this.sailSetting / 3) * windFactor * lock;
+    // battered hulls wallow
+    if (this.hp / this.maxHp < 0.4) targetSpeed *= 0.75;
+    // a round of coconut fizz puts wind in English sails
+    if (this.faction === 'england' && this.game.elapsed < this.game.buffs?.speedUntil) {
+      targetSpeed *= 1.15;
+    }
     const accel = targetSpeed > this.speed ? 0.35 : 0.9;
     this.speed += (targetSpeed - this.speed) * Math.min(1, dt * accel);
 
@@ -227,9 +234,10 @@ export class Ship {
     this.reload.port = Math.max(0, this.reload.port - dt);
     this.reload.starboard = Math.max(0, this.reload.starboard - dt);
 
-    // --- out-of-combat repair ---
+    // --- out-of-combat repair (faster while the stew buff lasts) ---
     if (this.game.elapsed - this.lastDamageT > 10 && this.hp < this.maxHp) {
-      this.hp = Math.min(this.maxHp, this.hp + dt);
+      const rate = this.faction === 'england' && this.game.elapsed < this.game.buffs?.repairUntil ? 3 : 1;
+      this.hp = Math.min(this.maxHp, this.hp + rate * dt);
     }
 
     // --- damage smoke ---

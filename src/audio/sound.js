@@ -17,6 +17,127 @@ export class Sound {
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
+  setMuted(m) {
+    this.muted = m;
+    if (this.master) this.master.gain.value = m ? 0 : 0.5;
+  }
+
+  // endless rolling-sea bed: looped noise through a lowpass, swelling on a slow LFO
+  startAmbience() {
+    if (this.ambienceOn || !this.ctx) return;
+    this.ambienceOn = true;
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer(6);
+    src.loop = true;
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 380;
+    lp.Q.value = 0.5;
+    const g = this.ctx.createGain();
+    g.gain.value = 0.1;
+    const lfo = this.ctx.createOscillator();
+    lfo.frequency.value = 0.07;
+    const lfoG = this.ctx.createGain();
+    lfoG.gain.value = 0.055;
+    lfo.connect(lfoG).connect(g.gain);
+    src.connect(lp).connect(g).connect(this.master);
+    src.start();
+    lfo.start();
+
+    // faint high spray
+    const spray = this.ctx.createBufferSource();
+    spray.buffer = this.noiseBuffer(4);
+    spray.loop = true;
+    const hp = this.ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 2500;
+    const sg = this.ctx.createGain();
+    sg.gain.value = 0.012;
+    spray.connect(hp).connect(sg).connect(this.master);
+    spray.start();
+  }
+
+  gull(pos) {
+    if (!this.ready()) return;
+    const g = this.gainFor(pos);
+    if (g < 0.12) return;
+    const t0 = this.ctx.currentTime;
+    for (const [d, f0] of [[0, 1350], [0.4, 1550]]) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f0, t0 + d);
+      osc.frequency.exponentialRampToValueAtTime(f0 * 0.55, t0 + d + 0.3);
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.1 * g, t0 + d);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + d + 0.32);
+      osc.connect(gain).connect(this.master);
+      osc.start(t0 + d);
+      osc.stop(t0 + d + 0.35);
+    }
+  }
+
+  creak(pos) {
+    if (!this.ready()) return;
+    const g = this.gainFor(pos);
+    const t0 = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(95, t0);
+    osc.frequency.exponentialRampToValueAtTime(55, t0 + 0.4);
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 240;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.12 * g, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.42);
+    osc.connect(lp).connect(gain).connect(this.master);
+    osc.start();
+    osc.stop(t0 + 0.45);
+  }
+
+  // steel on steel during a boarding melee
+  clank(pos) {
+    if (!this.ready()) return;
+    const g = this.gainFor(pos);
+    if (g < 0.1) return;
+    const t0 = this.ctx.currentTime;
+    for (const f of [2500 + Math.random() * 600, 3400 + Math.random() * 500]) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'square';
+      osc.frequency.value = f;
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.06 * g, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.07);
+      osc.connect(gain).connect(this.master);
+      osc.start();
+      osc.stop(t0 + 0.09);
+    }
+  }
+
+  dig() {
+    if (!this.ready()) return;
+    const t0 = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(110, t0);
+    osc.frequency.exponentialRampToValueAtTime(60, t0 + 0.12);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.4, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.14);
+    osc.connect(gain).connect(this.master);
+    osc.start();
+    osc.stop(t0 + 0.16);
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer(0.1);
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 600;
+    const ng = this.ctx.createGain();
+    this.env(ng, 0.2, 0.1);
+    src.connect(lp).connect(ng).connect(this.master);
+    src.start();
+  }
+
   gainFor(pos) {
     if (!pos || !this.listener) return 1;
     const d = this.listener.distanceTo(pos);
