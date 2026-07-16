@@ -79,6 +79,7 @@ export class Game {
     this.gullT = 4;
     this.creakT = 6;
     this.hunterT = 240;
+    this.dolphinT = 35;
 
     this.ships = [];
     this.fleet = [];
@@ -886,7 +887,7 @@ export class Game {
       this.sound.listener = f.pos;
     }
     this.ocean.update(t, this.camera.position.x, this.camera.position.z);
-    this.env.update(dt, this.camera, this.wind.angle);
+    this.env.update(dt, this.camera, this.wind.angle, t);
 
     this.hud.update(dt);
     this.labels.update();
@@ -919,6 +920,11 @@ export class Game {
     if (this.creakT <= 0) {
       this.creakT = 4 + Math.random() * 6;
       if (f.speed > 3 && !this.ashore.active) this.sound.creak(f.pos);
+    }
+    this.dolphinT -= dt;
+    if (this.dolphinT <= 0) {
+      this.dolphinT = 50 + Math.random() * 60;
+      if (f.speed > 3.5 && !this.ashore.active) this.effects.spawnDolphinPod(f);
     }
   }
 

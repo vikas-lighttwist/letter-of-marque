@@ -114,6 +114,12 @@ export class Sound {
     }
   }
 
+  dolphin() {
+    if (!this.ready()) return;
+    this.blip(950, 0, 0.12, 0.12, 'sine');
+    this.blip(1450, 0.1, 0.14, 0.12, 'sine');
+  }
+
   dig() {
     if (!this.ready()) return;
     const t0 = this.ctx.currentTime;

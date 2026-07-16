@@ -295,11 +295,35 @@ export function createEnvironment(scene) {
   }
   scene.add(group);
 
+  // seagulls wheeling over every island
+  const gullMat = toonMat(0xf5f5f0);
+  const gulls = [];
+  for (const isl of islands) {
+    for (let i = 0; i < 2; i++) {
+      const bird = new THREE.Group();
+      for (const s of [1, -1]) {
+        const wing = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.06, 0.32), gullMat);
+        wing.position.x = s * 0.52;
+        wing.rotation.z = s * 0.3;
+        bird.add(wing);
+      }
+      scene.add(bird);
+      gulls.push({
+        bird,
+        isl,
+        r: isl.rRaw * (0.55 + i * 0.35),
+        speed: (0.22 + Math.random() * 0.18) * (i % 2 ? 1 : -1),
+        phase: Math.random() * Math.PI * 2,
+        h: 22 + Math.random() * 12,
+      });
+    }
+  }
+
   return {
     islands,
     port,
     sunDir: SUN_DIR,
-    update(dt, camera, windAngle = 0) {
+    update(dt, camera, windAngle = 0, t = 0) {
       sky.position.set(camera.position.x, 0, camera.position.z);
       const wx = Math.sin(windAngle);
       const wz = Math.cos(windAngle);
@@ -312,6 +336,19 @@ export function createEnvironment(scene) {
         }
       }
       if (port) port.banner.rotation.y = windAngle + Math.PI / 2 + Math.sin(performance.now() / 400) * 0.15;
+
+      for (const gl of gulls) {
+        const a = t * gl.speed + gl.phase;
+        gl.bird.position.set(
+          gl.isl.x + Math.cos(a) * gl.r,
+          gl.h + Math.sin(t * 0.9 + gl.phase) * 1.6,
+          gl.isl.z + Math.sin(a) * gl.r
+        );
+        gl.bird.rotation.y = -a + (gl.speed > 0 ? 0 : Math.PI);
+        const flap = 0.3 + Math.sin(t * 6.5 + gl.phase) * 0.35;
+        gl.bird.children[0].rotation.z = flap;
+        gl.bird.children[1].rotation.z = -flap;
+      }
     },
   };
 }

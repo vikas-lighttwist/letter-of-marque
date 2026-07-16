@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { waveHeight } from '../world/waves.js';
+import { toonMat } from '../core/toon.js';
 
 const BALL_GEO = new THREE.SphereGeometry(0.28, 6, 5);
 const BALL_MAT = new THREE.MeshBasicMaterial({ color: 0x241f1a });
@@ -13,6 +14,81 @@ export class Effects {
     this.balls = [];
     this.puffs = [];
     this.rings = [];
+    this.dolphins = [];
+  }
+
+  makeDolphin() {
+    const g = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.8, 8, 6), toonMat(0x7d93a3));
+    body.scale.set(0.42, 0.42, 1);
+    g.add(body);
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.34, 5), toonMat(0x64798a));
+    fin.position.set(0, 0.36, 0.05);
+    fin.rotation.x = -0.35;
+    g.add(fin);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.07, 0.24), toonMat(0x64798a));
+    tail.position.set(0, 0.05, -0.82);
+    g.add(tail);
+    return g;
+  }
+
+  // a pod leaps across your course ahead of the bow
+  spawnDolphinPod(ship) {
+    const fwd = ship.forward;
+    const right = new THREE.Vector3(-Math.cos(ship.heading), 0, Math.sin(ship.heading));
+    const side = Math.random() < 0.5 ? 1 : -1;
+    const base = ship.pos.clone().addScaledVector(fwd, 34);
+    for (let i = 0; i < 3; i++) {
+      const start = base
+        .clone()
+        .addScaledVector(right, side * (-16 - i * 4))
+        .addScaledVector(fwd, i * 3 - 3);
+      this.dolphins.push({
+        mesh: this.makeDolphin(),
+        pos: start,
+        dir: right.clone().multiplyScalar(side),
+        delay: i * 0.45,
+        u: 0,
+        jumpsLeft: 3,
+        inScene: false,
+      });
+    }
+    this.game.sound.dolphin?.();
+  }
+
+  updateDolphins(dt, t) {
+    for (let i = this.dolphins.length - 1; i >= 0; i--) {
+      const d = this.dolphins[i];
+      if (d.delay > 0) {
+        d.delay -= dt;
+        continue;
+      }
+      if (!d.inScene) {
+        this.scene.add(d.mesh);
+        d.inScene = true;
+        this.spawnSplash(d.pos.clone());
+      }
+      d.u += dt / 1.35;
+      if (d.u >= 1) {
+        this.spawnSplash(d.mesh.position.clone());
+        d.jumpsLeft--;
+        if (d.jumpsLeft <= 0) {
+          this.scene.remove(d.mesh);
+          this.dolphins.splice(i, 1);
+          continue;
+        }
+        d.pos.addScaledVector(d.dir, 11);
+        d.u = 0;
+        continue;
+      }
+      const u = d.u;
+      d.mesh.position
+        .copy(d.pos)
+        .addScaledVector(d.dir, u * 11);
+      d.mesh.position.y = Math.sin(u * Math.PI) * 2.7 - 0.7;
+      d.mesh.rotation.y = Math.atan2(d.dir.x, d.dir.z);
+      d.mesh.rotation.x = -Math.cos(u * Math.PI) * 0.85;
+    }
   }
 
   fireBroadside(ship, side) {
@@ -110,6 +186,8 @@ export class Effects {
   }
 
   update(dt, t) {
+    this.updateDolphins(dt, t);
+
     // cannonballs
     for (let i = this.balls.length - 1; i >= 0; i--) {
       const b = this.balls[i];
