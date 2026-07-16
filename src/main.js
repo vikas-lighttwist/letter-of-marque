@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { createOcean } from './world/ocean.js';
 import { createEnvironment, HORIZON, FOG_NEAR, FOG_FAR } from './world/environment.js';
+import { Input } from './core/input.js';
+import { Sound } from './audio/sound.js';
+import { Game } from './game.js';
 
 const app = document.getElementById('app');
 
@@ -18,6 +21,16 @@ camera.lookAt(0, 0, 20);
 
 const env = createEnvironment(scene);
 const ocean = createOcean(scene, HORIZON, FOG_NEAR, FOG_FAR);
+const input = new Input(renderer.domElement, camera);
+const sound = new Sound();
+
+const game = new Game({ scene, camera, env, ocean, input, sound });
+
+input.onFire = (side) => game.fire(side);
+input.onBoard = () => game.toggleBoard();
+input.onSail = (d) => game.setSail(d);
+
+game.hud.showIntro(() => game.start());
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -34,8 +47,8 @@ function frame(now) {
   last = now;
   elapsed += dt;
 
-  ocean.update(elapsed, camera.position.x, camera.position.z);
-  env.update(dt, camera);
+  input.update();
+  game.update(dt, elapsed);
   renderer.render(scene, camera);
 }
 requestAnimationFrame(frame);
