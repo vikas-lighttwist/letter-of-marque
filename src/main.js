@@ -25,6 +25,8 @@ const input = new Input(renderer.domElement, camera);
 const sound = new Sound();
 
 const game = new Game({ scene, camera, env, ocean, input, sound });
+window.game = game; // debug/console access
+window.__render = () => renderer.render(scene, camera);
 
 input.onFire = (side) => game.fire(side);
 input.onBoard = () => game.toggleBoard();

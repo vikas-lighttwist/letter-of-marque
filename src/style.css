@@ -167,7 +167,7 @@ button:active { transform: scale(0.96); }
 #mute-btn {
   position: absolute;
   bottom: 18px;
-  right: 14px;
+  left: 14px;
   width: 46px;
   height: 46px;
   font-size: 20px;

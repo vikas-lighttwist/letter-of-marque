@@ -277,8 +277,8 @@ export class Ship {
     this.sailVisual += (target - this.sailVisual) * 0.05;
     for (const s of this.mesh.sails) s.scale.y = this.sailVisual;
 
-    // flag flutter
-    this.mesh.flag.rotation.y = Math.sin(t * 2.4 + this.id) * 0.22 + Math.PI / 2;
+    // flag flutter — streams aft but angled out so the chase camera sees it
+    this.mesh.flag.rotation.y = Math.PI / 2 - 0.55 + Math.sin(t * 2.4 + this.id) * 0.25;
 
     g.updateMatrixWorld();
   }

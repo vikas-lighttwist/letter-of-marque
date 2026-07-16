@@ -119,7 +119,8 @@ export function updateFleetAI(ship, game, dt, index) {
 
   const d = ship.pos.distanceTo(station);
   steerTo(ship, station.x, station.z);
-  ship.sailSetting = d > 60 ? 3 : d > 20 ? 2 : Math.min(flag.sailSetting, 2);
+  // always keep a speed edge over the flagship until on station
+  ship.sailSetting = d > 30 ? 3 : d > 12 ? Math.min(flag.sailSetting + 1, 3) : flag.sailSetting;
 
   const { target, dist } = nearestEnemy(ship, game);
   if (target && dist < 85) tryBroadsides(ship, target, game);

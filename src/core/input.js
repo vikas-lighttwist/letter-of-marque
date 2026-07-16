@@ -22,7 +22,11 @@ export class Input {
     this.onSail = () => {};
 
     canvas.addEventListener('pointerdown', (e) => {
-      canvas.setPointerCapture(e.pointerId);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        // synthetic or already-released pointers can't be captured — steering still works
+      }
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (this.pointers.size === 2) {
         this.steerPoint = null;
