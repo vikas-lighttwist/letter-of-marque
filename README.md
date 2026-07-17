@@ -1,5 +1,7 @@
 # Letter of Marque
 
+**Play it now: https://letter-of-marque.onrender.com** — works on desktop and phones (add to home screen for fullscreen).
+
 A cel-shaded 3D naval action game for the browser. You are an English privateer in the
 Caribbean — hunt Spanish ships, weaken them with broadsides, **board** them to seize
 their gold and add them to your growing fleet.
@@ -31,3 +33,14 @@ Sink a ship and half her gold spills as flotsam; board her instead and you take
 everything — the gold, part of the crew, and the ship herself.
 
 See [GAME_DESIGN.md](GAME_DESIGN.md) for the full design document.
+
+
+## Deployment
+
+Hosted as a Render static site (same workspace as framediff), defined in
+`render.yaml`. Pushes to `main` on GitHub auto-deploy; manual deploys via
+`render deploys create srv-d9dbvtbrjlhs73eqi00g`.
+
+- Live: https://letter-of-marque.onrender.com
+- Repo: https://github.com/vikas-lighttwist/letter-of-marque
+- Dashboard: https://dashboard.render.com/static/srv-d9dbvtbrjlhs73eqi00g
