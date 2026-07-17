@@ -1,0 +1,14 @@
+{
+  "name": "Letter of Marque",
+  "short_name": "Marque",
+  "description": "A cel-shaded privateer adventure on the Spanish Main.",
+  "start_url": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#050505",
+  "theme_color": "#0b4157",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

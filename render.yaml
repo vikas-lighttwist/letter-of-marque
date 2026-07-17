@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: letter-of-marque
+    runtime: static
+    autoDeployTrigger: commit
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist

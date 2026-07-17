@@ -20,11 +20,16 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  position: fixed;
+  inset: 0;
   background: #0e5e78;
   font-family: Georgia, 'Times New Roman', serif;
   color: var(--parchment);
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
   touch-action: none;
 }
 
@@ -583,4 +588,67 @@ button:active { transform: scale(0.96); }
   #player-plate { min-width: 180px; }
   #fleet-panel { width: 140px; }
   .fire-btn { min-width: 96px; font-size: 14px; }
+}
+
+/* ---------- mobile: safe areas & small screens ---------- */
+#player-plate { top: calc(10px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); }
+#fleet-panel { top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); }
+#wind-dial { top: calc(10px + env(safe-area-inset-top)); }
+#bounty-tracker { top: calc(10px + env(safe-area-inset-top)); }
+#controls-bar { bottom: calc(12px + env(safe-area-inset-bottom)); }
+#mute-btn { bottom: calc(14px + env(safe-area-inset-bottom)); left: calc(12px + env(safe-area-inset-left)); }
+#minimap { bottom: calc(78px + env(safe-area-inset-bottom)); right: calc(10px + env(safe-area-inset-right)); }
+#board-btn { bottom: calc(92px + env(safe-area-inset-bottom)); }
+#anchor-btn { bottom: calc(158px + env(safe-area-inset-bottom)); }
+#market-btn { bottom: calc(218px + env(safe-area-inset-bottom)); }
+
+/* phones in portrait: shrink the chrome, keep the sea */
+@media (max-width: 520px) {
+  #player-plate { min-width: 170px; padding: 7px 9px; }
+  .plate-title { font-size: 13px; }
+  .plate-row { font-size: 12px; gap: 10px; }
+  #fleet-panel { width: 140px; padding: 7px 9px; }
+  .panel-head { font-size: 10px; }
+  #wind-dial {
+    width: 48px;
+    height: 48px;
+    top: calc(76px + env(safe-area-inset-top));
+    left: calc(10px + env(safe-area-inset-left));
+    transform: none;
+  }
+  #wind-arrow { font-size: 20px; }
+  #wind-label { display: none; }
+  #minimap { width: 108px; height: 108px; }
+  #bounty-tracker { margin-top: 66px; font-size: 11px; max-width: 60vw; white-space: normal; text-align: center; }
+  .fire-btn { min-width: 116px; min-height: 52px; font-size: 17px; }
+  #sail-ctrl button { min-width: 46px; min-height: 46px; }
+  .ctx-btn, #board-btn { min-width: 150px; min-height: 46px; font-size: 15px; }
+  .ship-label { transform: translate(-50%, -100%) scale(0.85); }
+  #overlay-card { padding: 16px 12px; }
+  .die { font-size: 34px; }
+}
+
+/* phones in landscape: short screens, tuck everything in */
+@media (max-height: 480px) {
+  #player-plate { min-width: 165px; padding: 6px 8px; }
+  .plate-title { font-size: 13px; }
+  .plate-row { font-size: 12px; gap: 10px; }
+  #fleet-panel { width: 150px; padding: 6px 8px; max-height: 44vh; overflow-y: auto; }
+  #wind-dial { width: 46px; height: 46px; }
+  #wind-arrow { font-size: 19px; }
+  #wind-label { display: none; }
+  #bounty-tracker { margin-top: 56px; font-size: 11px; }
+  #minimap { width: 96px; height: 96px; bottom: calc(70px + env(safe-area-inset-bottom)); }
+  #controls-bar { bottom: calc(8px + env(safe-area-inset-bottom)); gap: 10px; }
+  .fire-btn { min-width: 110px; min-height: 48px; font-size: 16px; }
+  #sail-ctrl button { min-width: 44px; min-height: 44px; }
+  #board-btn { bottom: calc(64px + env(safe-area-inset-bottom)); min-height: 44px; }
+  #anchor-btn { bottom: calc(114px + env(safe-area-inset-bottom)); min-height: 44px; }
+  #market-btn { bottom: calc(164px + env(safe-area-inset-bottom)); min-height: 44px; }
+  #mute-btn { width: 38px; height: 38px; font-size: 16px; }
+  #overlay-card { max-height: 92vh; overflow-y: auto; padding: 12px 14px; }
+  #overlay-card h1 { font-size: 22px; margin-bottom: 4px; }
+  .die { font-size: 30px; }
+  .shop-item { padding: 5px 4px; }
+  .shop-desc { font-size: 11px; }
 }

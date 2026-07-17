@@ -13,6 +13,10 @@ export class Sound {
       this.master = this.ctx.createGain();
       this.master.gain.value = 0.5;
       this.master.connect(this.ctx.destination);
+      // iOS suspends the context on lock/background — wake it on any tap
+      window.addEventListener('pointerdown', () => {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+      });
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
