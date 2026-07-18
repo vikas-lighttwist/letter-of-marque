@@ -17,6 +17,24 @@ export class Sound {
       window.addEventListener('pointerdown', () => {
         if (this.ctx.state === 'suspended') this.ctx.resume();
       });
+
+      // iPhones mute Web Audio when the ring/silent switch is on silent.
+      // Declaring the page a media "playback" session (iOS 17+) routes us
+      // through the media channel like a video game should be…
+      try {
+        if (navigator.audioSession) navigator.audioSession.type = 'playback';
+      } catch {
+        /* not supported — fall through to the <audio> unlock below */
+      }
+      // …and for older iOS, a looping silent <audio> element does the same.
+      // Must start inside the user gesture that called init().
+      const a = document.createElement('audio');
+      a.setAttribute('playsinline', '');
+      a.loop = true;
+      a.src =
+        'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==';
+      a.play().catch(() => {});
+      this._unlockEl = a;
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
