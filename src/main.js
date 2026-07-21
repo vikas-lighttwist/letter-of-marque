@@ -1,11 +1,17 @@
 import * as THREE from 'three';
 import { createOcean } from './world/ocean.js';
-import { createEnvironment, HORIZON, FOG_NEAR, FOG_FAR } from './world/environment.js';
+import { createEnvironment, setWorldSeed, HORIZON, FOG_NEAR, FOG_FAR } from './world/environment.js';
 import { Input } from './core/input.js';
 import { Sound } from './audio/sound.js';
+import { loadSave } from './core/save.js';
 import { Game } from './game.js';
 
 const app = document.getElementById('app');
+
+// a saved voyage rebuilds its own world; a fresh one rolls new seas
+const save = loadSave();
+const worldSeed = save?.worldSeed ?? ((Math.random() * 2 ** 31) | 0);
+setWorldSeed(worldSeed);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -24,7 +30,7 @@ const ocean = createOcean(scene, HORIZON, FOG_NEAR, FOG_FAR);
 const input = new Input(renderer.domElement, camera);
 const sound = new Sound();
 
-const game = new Game({ scene, camera, env, ocean, input, sound });
+const game = new Game({ scene, camera, env, ocean, input, sound, restore: save, worldSeed });
 window.game = game; // debug/console access
 window.__render = () => renderer.render(scene, camera);
 

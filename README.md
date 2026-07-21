@@ -32,6 +32,10 @@ Works with a trackpad, mouse, or touchscreen:
 Sink a ship and half her gold spills as flotsam; board her instead and you take
 everything — the gold, part of the crew, and the ship herself.
 
+Your voyage **saves itself** (locally, every ~10 seconds and when you close the
+tab). Come back later and *Continue the Voyage* rebuilds the very same seas —
+fleet, upgrades, bounty, treasure map and all. *New Voyage* rolls fresh ones.
+
 See [GAME_DESIGN.md](GAME_DESIGN.md) for the full design document.
 
 

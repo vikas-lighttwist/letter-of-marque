@@ -10,6 +10,7 @@ import { Minimap } from './ui/minimap.js';
 import { AshoreMode, islandGroundY } from './ashore/ashore.js';
 import { buildTavernInterior } from './ashore/tavernInterior.js';
 import { makeCaptain } from './ships/captain.js';
+import { writeSave } from './core/save.js';
 import { waveHeight } from './world/waves.js';
 import { toonMat } from './core/toon.js';
 
@@ -48,7 +49,9 @@ function rand(a, b) {
 }
 
 export class Game {
-  constructor({ scene, camera, env, ocean, input, sound }) {
+  constructor({ scene, camera, env, ocean, input, sound, restore = null, worldSeed = 0 }) {
+    this.worldSeed = worldSeed;
+    this.savedPlaySeconds = 0;
     this.scene = scene;
     this.camera = camera;
     this.env = env;
@@ -93,21 +96,31 @@ export class Game {
     this.anchorT = 0;
     this.spawnTimer = 10;
 
-    // player flagship
-    this.flagship = this.addShip('brigantine', 'england', 0, 0, 0);
-    this.flagship.name = 'Fortune';
-    this.flagship.sailSetting = 0;
-    this.fleet.push(this.flagship);
+    if (restore) {
+      this.restoreState(restore);
+    } else {
+      // player flagship
+      this.flagship = this.addShip('brigantine', 'england', 0, 0, 0);
+      this.flagship.name = 'Fortune';
+      this.flagship.sailSetting = 0;
+      this.fleet.push(this.flagship);
 
-    // opening world population
-    const spawns = [
-      ['sloop', 160, 0.5], ['sloop', 230, 2.1], ['brigantine', 260, 3.5],
-      ['brigantine', 330, 4.9], ['frigate', 430, 1.6], ['galleon', 390, 5.8],
-      ['shipOfTheLine', 580, 3.1],
-    ];
-    for (const [cls, d, a] of spawns) {
-      this.addShip(cls, 'spain', Math.cos(a) * d, Math.sin(a) * d, rand(0, Math.PI * 2));
+      // opening world population
+      const spawns = [
+        ['sloop', 160, 0.5], ['sloop', 230, 2.1], ['brigantine', 260, 3.5],
+        ['brigantine', 330, 4.9], ['frigate', 430, 1.6], ['galleon', 390, 5.8],
+        ['shipOfTheLine', 580, 3.1],
+      ];
+      for (const [cls, d, a] of spawns) {
+        this.addShip(cls, 'spain', Math.cos(a) * d, Math.sin(a) * d, rand(0, Math.PI * 2));
+      }
     }
+    this.saveT = 10;
+    const saveOnLeave = () => this.saveNow();
+    window.addEventListener('pagehide', saveOnLeave);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveOnLeave();
+    });
 
     this.hud = new HUD(this);
     this.labels = new Labels(this);
@@ -256,9 +269,108 @@ export class Game {
   start() {
     this.state = 'playing';
     this.startTime = this.elapsed;
-    this.flagship.sailSetting = 2;
+    if (this.flagship.sailSetting === 0) this.flagship.sailSetting = 2;
     this.sound.init();
     this.sound.startAmbience();
+    if (this.restored) this.hud.banner('⚓ Voyage restored — welcome back, Captain!');
+  }
+
+  // ---------------------------------------------------------- save & restore
+
+  serialize() {
+    const alive = this.ships.filter((s) => !s.dead && !s.sinking);
+    return {
+      v: 1,
+      worldSeed: this.worldSeed,
+      gold: this.gold,
+      captures: this.captures,
+      sinkings: this.sinkings,
+      playSeconds: Math.round(this.savedPlaySeconds + (this.elapsed - (this.startTime || 0))),
+      wind: { angle: this.wind.angle, seed: this.wind.seed },
+      upgrades: {
+        dmg: this.upgrades.dmg,
+        range: this.upgrades.range,
+        double: this.upgrades.double,
+        oak: this.upgrades.oak,
+        owned: [...this.upgrades.owned],
+      },
+      buffs: {
+        speed: Math.max(0, this.buffs.speedUntil - this.elapsed),
+        repair: Math.max(0, this.buffs.repairUntil - this.elapsed),
+      },
+      bounty: this.bounty,
+      bountyOffer: this.bountyOffer,
+      treasure: this.treasure
+        ? {
+            islandIndex: this.env.islands.indexOf(this.treasure.island),
+            x: this.treasure.x,
+            z: this.treasure.z,
+          }
+        : null,
+      flagshipIndex: alive.indexOf(this.flagship),
+      ships: alive.map((s) => ({
+        classKey: s.classKey,
+        faction: s.faction,
+        name: s.name,
+        x: +s.pos.x.toFixed(1),
+        z: +s.pos.z.toFixed(1),
+        heading: +s.heading.toFixed(3),
+        hp: Math.round(s.hp),
+        maxHp: Math.round(s.maxHp),
+        crew: s.crew,
+        gold: s.gold,
+        sailSetting: s.sailSetting,
+        orders: s.orders,
+        oakFitted: !!s.oakFitted,
+      })),
+    };
+  }
+
+  restoreState(r) {
+    this.restored = true;
+    this.gold = r.gold;
+    this.captures = r.captures;
+    this.sinkings = r.sinkings;
+    this.savedPlaySeconds = r.playSeconds || 0;
+    this.wind.angle = r.wind.angle;
+    this.wind.seed = r.wind.seed;
+    Object.assign(this.upgrades, {
+      dmg: r.upgrades.dmg,
+      range: r.upgrades.range,
+      double: r.upgrades.double,
+      oak: r.upgrades.oak,
+      owned: new Set(r.upgrades.owned),
+    });
+    this.buffs.speedUntil = r.buffs.speed || 0;
+    this.buffs.repairUntil = r.buffs.repair || 0;
+    this.bounty = r.bounty || null;
+    this.bountyOffer = r.bountyOffer || null;
+
+    for (const sd of r.ships) {
+      const s = this.addShip(sd.classKey, sd.faction, sd.x, sd.z, sd.heading);
+      s.name = sd.name;
+      s.maxHp = sd.maxHp;
+      s.hp = Math.min(sd.hp, sd.maxHp);
+      s.crew = sd.crew;
+      s.gold = sd.gold;
+      s.sailSetting = sd.sailSetting;
+      s.orders = sd.orders || 'follow';
+      s.oakFitted = !!sd.oakFitted;
+      s.reloadTime = s.faction === 'england' ? 2.2 : s.reloadTime;
+      if (s.faction === 'england') this.fleet.push(s);
+    }
+    this.flagship = this.ships[r.flagshipIndex] || this.fleet[0] || null;
+
+    if (r.treasure && r.treasure.islandIndex >= 0) {
+      const isl = this.env.islands[r.treasure.islandIndex];
+      if (isl) this.createTreasureAt(isl, r.treasure.x, r.treasure.z, true);
+    }
+  }
+
+  // autosave only from a clean state (at sea, no grapples, not ashore)
+  saveNow() {
+    if (this.state !== 'playing' || this.ashore?.active || this.boardings.length || !this.flagship) return;
+    writeSave(this.serialize());
   }
 
   // ------------------------------------------------------------ actions
@@ -674,8 +786,10 @@ export class Game {
     const isl = isls[Math.floor(Math.random() * isls.length)];
     const a = rand(0, Math.PI * 2);
     const rr = isl.rRaw * rand(0.3, 0.65);
-    const x = isl.x + Math.sin(a) * rr;
-    const z = isl.z + Math.cos(a) * rr;
+    this.createTreasureAt(isl, isl.x + Math.sin(a) * rr, isl.z + Math.cos(a) * rr);
+  }
+
+  createTreasureAt(isl, x, z, quiet = false) {
     const marker = new THREE.Group();
     for (const rot of [Math.PI / 4, -Math.PI / 4]) {
       const plank = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 0.45), toonMat(0x4a3826));
@@ -685,7 +799,7 @@ export class Game {
     marker.position.set(x, islandGroundY(isl, x, z) + 0.08, z);
     this.scene.add(marker);
     this.treasure = { island: isl, x, z, marker };
-    this.hud.banner('🗺 The map marks an island on your chart — seek the ✕!');
+    if (!quiet) this.hud.banner('🗺 The map marks an island on your chart — seek the ✕!');
   }
 
   nearDigSpot() {
@@ -1014,6 +1128,13 @@ export class Game {
     this.updateAmbientSounds(dt);
     this.updateDeckCaptain(dt, t);
     this.tapCooldown = Math.max(0, this.tapCooldown - dt);
+
+    // autosave the voyage
+    this.saveT -= dt;
+    if (this.saveT <= 0) {
+      this.saveT = 10;
+      this.saveNow();
+    }
 
     this.rig.zoom(this.input.consumeZoom());
 

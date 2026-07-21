@@ -7,8 +7,22 @@ export const FOG_FAR = 640;
 
 const SUN_DIR = new THREE.Vector3(0.45, 0.62, 0.4).normalize();
 
+// World generation is seeded so a saved voyage rebuilds the exact same
+// islands, port and town. Call setWorldSeed() BEFORE createEnvironment().
+let rng = Math.random;
+
+export function setWorldSeed(seed) {
+  let a = seed | 0;
+  rng = function mulberry32() {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 function rand(a, b) {
-  return a + Math.random() * (b - a);
+  return a + rng() * (b - a);
 }
 
 function createSky(scene) {
@@ -55,7 +69,7 @@ function createClouds(scene) {
   const geo = new THREE.IcosahedronGeometry(1, 0);
   for (let i = 0; i < 14; i++) {
     const cloud = new THREE.Group();
-    const blobs = 3 + Math.floor(Math.random() * 3);
+    const blobs = 3 + Math.floor(rng() * 3);
     for (let b = 0; b < blobs; b++) {
       const m = new THREE.Mesh(geo, mat);
       m.position.set(rand(-14, 14), rand(-2, 2), rand(-6, 6));
@@ -287,7 +301,7 @@ function createIsland(x, z, r, isPort = false) {
 
   const trunkMat = toonMat(0x8a6437);
   const leafMat = toonMat(0x2f8d3a);
-  const palms = 2 + Math.floor(Math.random() * 3);
+  const palms = 2 + Math.floor(rng() * 3);
   for (let p = 0; p < palms; p++) {
     const a = rand(0, Math.PI * 2);
     const d = r * rand(0.72, 0.92);
@@ -370,9 +384,9 @@ export function createEnvironment(scene) {
         bird,
         isl,
         r: isl.rRaw * (0.55 + i * 0.35),
-        speed: (0.22 + Math.random() * 0.18) * (i % 2 ? 1 : -1),
-        phase: Math.random() * Math.PI * 2,
-        h: 22 + Math.random() * 12,
+        speed: (0.22 + rng() * 0.18) * (i % 2 ? 1 : -1),
+        phase: rng() * Math.PI * 2,
+        h: 22 + rng() * 12,
       });
     }
   }

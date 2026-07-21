@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { SHIP_CLASSES } from '../ships/factory.js';
 import { SHOP_ITEMS } from '../game.js';
 import { Tavern } from './tavern.js';
+import { clearSave } from '../core/save.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -38,9 +39,13 @@ export class HUD {
       </div>
       <div class="tc-letter">You hold such a Letter.</div>
       <div class="tc-age">It is the Golden Age of Piracy</div>
-      <button id="start-btn" class="tc-btn">Set Sail</button>
+      <div class="tc-btn-row">
+        <button id="start-btn" class="tc-btn">${this.game.restored ? 'Continue the Voyage' : 'Set Sail'}</button>
+        ${this.game.restored ? '<button id="new-voyage-btn" class="tc-btn tc-btn-dim">New Voyage</button>' : ''}
+      </div>
       <div class="tc-hints">hold the sea to steer &nbsp;·&nbsp; fire lets fly both broadsides &nbsp;·&nbsp;
-      board weakened ships to take them &nbsp;·&nbsp; go ashore — the tavern has food, dice and maps</div>`;
+      board weakened ships to take them &nbsp;·&nbsp; go ashore — the tavern has food, dice and maps
+      &nbsp;·&nbsp; your voyage saves itself</div>`;
     $('overlay').classList.remove('hidden');
     $('start-btn').addEventListener('click', () => {
       $('overlay').classList.add('hidden');
@@ -48,6 +53,18 @@ export class HUD {
       $('hud').classList.remove('hidden');
       onStart();
     });
+    const nv = $('new-voyage-btn');
+    if (nv) {
+      nv.addEventListener('click', () => {
+        if (nv.dataset.armed) {
+          clearSave();
+          location.reload();
+        } else {
+          nv.dataset.armed = '1';
+          nv.textContent = 'Start over — sure?';
+        }
+      });
+    }
   }
 
   showGameOver({ gold, captures, sinkings, minutes }) {
